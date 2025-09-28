@@ -35,7 +35,7 @@ func NewAuthService() *AuthService {
 // TODO: Вернуть *models.User без пароля
 func (as *AuthService) Register(email, username, password string) (*models.User, error) {
 	// Пока просто возвращаем nil — заглушка
-	return nil, nil
+	return &models.User{ID: 0, Email: "sam@sam.ru", Username: "sam", Password: "password"}, nil
 }
 
 // Login — авторизует пользователя и возвращает JWT токен
@@ -47,7 +47,7 @@ func (as *AuthService) Register(email, username, password string) (*models.User,
 // TODO: Вернуть ошибку "неправильный email или пароль" — если не найден
 func (as *AuthService) Login(email, password string) (string, error) {
 	// Пока просто возвращаем пустую строку — заглушка
-	return "", nil
+	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", nil
 }
 
 // GetUserFromToken — расшифровывает JWT и возвращает пользователя по ID
