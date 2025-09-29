@@ -35,7 +35,7 @@ func main() {
 
 	// Настройка CORS с помощью библиотеки
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "https://myapp.com"},
+		AllowedOrigins:   []string{"http://89.208.208.203:8081", "http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "X-Requested-With"},
 		AllowCredentials: true,
