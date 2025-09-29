@@ -30,6 +30,6 @@ func main() {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	})
 
-	println(" Сервер запущен на :8080")
-	http.ListenAndServe(":8080", nil)
+	println(" Сервер запущен на http://89.208.208.203:8080")
+	http.ListenAndServe("http://89.208.208.203:8080", nil)
 }
