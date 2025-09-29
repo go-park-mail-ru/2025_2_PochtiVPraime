@@ -119,16 +119,17 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("{}"))
 		return
 	}
-	email := UserInput.Email
+	//email := UserInput.Email
+	username := UserInput.Username
 	password := UserInput.Password
 
-	if len(email) == 0 || len(password) == 0 {
+	if len(username) == 0 || len(password) == 0 {
 		newErr := errors.New("заполните все поля")
 		log.Printf("error while fill fields: %s", newErr)
 		return
 	}
 
-	JWT, err := h.AuthService.Login(email, password)
+	JWT, err := h.AuthService.Login(username, password)
 	_ = JWT
 	if err != nil {
 		log.Printf("error while authorizate: %s", err)

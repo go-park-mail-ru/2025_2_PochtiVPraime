@@ -52,8 +52,8 @@ func (as *AuthService) Register(email, username, password string) (*models.User,
 		log.Printf("error while encode password: %s", err)
 		return nil, err
 	}
-	storeUsers[email] = models.User{ID: userId, Email: email, Username: username, Password: string(encode_pass)}
-	newUser := storeUsers[email]
+	storeUsers[username] = models.User{ID: userId, Email: email, Username: username, Password: string(encode_pass)}
+	newUser := storeUsers[username]
 	return &newUser, nil
 }
 
@@ -64,12 +64,12 @@ func (as *AuthService) Register(email, username, password string) (*models.User,
 // TODO: Создать JWT токен с payload: { "userId": 123, "exp": 1720000000 }
 // TODO: Вернуть токен и nil — если всё ок
 // TODO: Вернуть ошибку "неправильный email или пароль" — если не найден
-func (as *AuthService) Login(email, password string) (string, error) {
+func (as *AuthService) Login(username, password string) (string, error) {
 	// Пока просто возвращаем пустую строку — заглушка
-	User, flag := storeUsers[email]
+	User, flag := storeUsers[username]
 	if !flag {
-		log.Printf("wrong email")
-		return "", errors.New("Нет пользователя с таким email")
+		log.Printf("wrong username")
+		return "", errors.New("Нет пользователя с таким username")
 	}
 	err := bcrypt.CompareHashAndPassword([]byte(User.Password), []byte(password))
 	if err != nil {
