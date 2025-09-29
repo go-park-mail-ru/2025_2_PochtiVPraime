@@ -75,7 +75,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	validUser, err := h.AuthService.Register(email, username, password)
-
+	_ = validUser
 	if err != nil {
 		log.Printf("error while saving User in Service: %s", err)
 		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
@@ -89,9 +89,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(json_User))
+	log.Printf(string(json_User))
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message": "200 : OK"}`))
+	//w.Write([]byte(`{"message": "200 : OK"}`))
+	//w.WriteHeader(http.StatusOK)
 }
 
 // Login — обрабатывает POST /login
@@ -102,6 +103,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 // --TODO: Если ошибка — вернуть 401 с сообщением "неправильный email или пароль"
 // --TODO: Если успех — вернуть 200 с JSON: { "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	log.Printf("login")
 	// Пока просто отвечаем заглушкой
 	if r.Method != http.MethodPost {
 		log.Printf("Запрос " + r.Method + ",а должен быть POST")
@@ -136,8 +138,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte("{tocken:" + JWT + "}"))
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "200 : OK"}`))
+	w.WriteHeader(http.StatusOK)
 }
 
 // GetBoards — обрабатывает GET /get-boards
