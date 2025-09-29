@@ -1,7 +1,11 @@
 package services
 
 import (
+	"errors"
+	"log"
+
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // JWT_SECRET секрет для подписи токенов (в продакшене — из переменных окружения)
@@ -16,6 +20,9 @@ const JWT_SECRET = "super-secret-key-1234567890" // временно! Замен
 type AuthService struct {
 	// Поля будут добавлены позже пока пусто
 }
+
+var userId int = 0
+var storeUsers map[string]models.User = map[string]models.User{}
 
 // NewAuthService — конструктор для Dependency Injection
 // TODO: В будущем принимать db, logger, hasher
@@ -34,19 +41,42 @@ func NewAuthService() *AuthService {
 // TODO: Сохранить пользователя в базу данных (пока что в памяти)
 // TODO: Вернуть *models.User без пароля
 func (as *AuthService) Register(email, username, password string) (*models.User, error) {
-	// Пока просто возвращаем nil — заглушка
-	return &models.User{ID: 0, Email: "sam@sam.ru", Username: "sam", Password: "password"}, nil
+	if len(storeBoards) == 0 {
+		userId = 0
+	} else {
+		userId++
+	}
+	cost := bcrypt.DefaultCost
+	encode_pass, err := bcrypt.GenerateFromPassword([]byte(password), cost)
+	if err != nil {
+		log.Printf("error while encode password: %s", err)
+		return nil, err
+	}
+	storeUsers[email] = models.User{ID: userId, Email: email, Username: username, Password: string(encode_pass)}
+	newUser := storeUsers[email]
+	return &newUser, nil
 }
 
 // Login — авторизует пользователя и возвращает JWT токен
 // TODO: Проверить, что email и password не пустые
-// TODO: Найти пользователя по email
-// TODO: Сравнить пароль (когда будем хешировать — использовать bcrypt.CompareHashAndPassword)
+// --TODO: Найти пользователя по email
+// --TODO: Сравнить пароль (когда будем хешировать — использовать bcrypt.CompareHashAndPassword)
 // TODO: Создать JWT токен с payload: { "userId": 123, "exp": 1720000000 }
 // TODO: Вернуть токен и nil — если всё ок
 // TODO: Вернуть ошибку "неправильный email или пароль" — если не найден
 func (as *AuthService) Login(email, password string) (string, error) {
 	// Пока просто возвращаем пустую строку — заглушка
+	User, flag := storeUsers[email]
+	if !flag {
+		log.Printf("wrong email")
+		return "", errors.New("Нет пользователя с таким email")
+	}
+	err := bcrypt.CompareHashAndPassword([]byte(User.Password), []byte(password))
+	if err != nil {
+		log.Printf("Wrong password: %s", err)
+		return "", err
+	}
+
 	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", nil
 }
 

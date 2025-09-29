@@ -2,6 +2,9 @@ package services
 
 import "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
 
+var boardsId int
+var storeBoards map[int]models.Board
+
 // BoardService — сервис для работы с досками
 type BoardService struct {
 	// Здесь будут зависимости в будущем
@@ -27,5 +30,6 @@ func (bs *BoardService) GetBoards() []models.Board {
 // TODO: Вернуть созданную доску
 func (bs *BoardService) AddBoard(name string) (*models.Board, error) {
 	// Пока просто возвращаем nil
+
 	return nil, nil
 }

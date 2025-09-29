@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"net/http"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -11,12 +10,13 @@ import (
 
 func main() {
 
-	db, err := sql.Open("sqlite3", "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/database/SQLite/store.db")
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
+	/*
+		db, err := sql.Open("sqlite3", "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/database/SQLite/store.db")
+		if err != nil {
+			panic(err)
+		}
+		defer db.Close()
+	*/
 	h := handlers.NewHandler()
 
 	http.HandleFunc("/register", h.Register)
