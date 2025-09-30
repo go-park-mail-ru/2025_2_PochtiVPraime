@@ -2,11 +2,18 @@ package models
 
 // Board — модель доски
 type Board struct {
-	ID         int    `json:"id"`
-	Name       string `json:"name"`
-	isArchived bool   `json:"isArchived"`
-	userId     int    `json:"userId"`
+	Id        string `json:"id"`
+	OwnerId   int    `json:"ownerId"`
+	Title     string `json:"title"`
+	Image     string `json:"image"`
+	Archived  bool   `json:"archived"`
+	CreatedAt string `json:"createAt"`
 	// TODO: Добавить поле UserID — чтобы знать, кому принадлежит доска
 	// TODO: Добавить CreatedAt
 	// TODO: возможно ещё какие то поля
+}
+
+type BoardsData struct {
+	ActiveBoards   []Board `json:"activeBoards"`
+	ArchivedBoards []Board `json:"archivedBoards"`
 }

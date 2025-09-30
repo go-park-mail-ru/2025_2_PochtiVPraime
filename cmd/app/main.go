@@ -20,15 +20,6 @@ func main() {
 		defer db.Close()
 	*/
 	h := handlers.NewHandler()
-
-	/*
-		// TODO: Разобраться как и для каких ручек настроить CORS
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "http://89.208.208.203:8081")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		})
-	*/
 	mux.HandleFunc("/api/auth/register", h.Register)
 	mux.HandleFunc("/api/auth/login", h.Login)
 	mux.HandleFunc("/api/auth/me", h.Me)
@@ -36,7 +27,7 @@ func main() {
 
 	// Настройка CORS с помощью библиотеки
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://89.208.208.203:8081", "http://localhost:3000"},
+		AllowedOrigins:   []string{"http://89.208.208.203:8081", "http://localhost:8081"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "X-Requested-With"},
 		AllowCredentials: true,

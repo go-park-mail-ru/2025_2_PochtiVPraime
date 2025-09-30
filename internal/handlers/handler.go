@@ -90,8 +90,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(json_User))
 	log.Printf(string(json_User))
 	w.Header().Set("Content-Type", "application/json")
-	//w.Write([]byte(`{"message": "200 : OK"}`))
-	//w.WriteHeader(http.StatusOK)
 }
 
 // Login — обрабатывает POST api/auth/login
@@ -103,7 +101,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 // --TODO: Если успех — вернуть 200 с JSON: { "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	log.Printf("login")
-	// Пока просто отвечаем заглушкой
 	if r.Method != http.MethodPost {
 		log.Printf("Запрос " + r.Method + ",а должен быть POST")
 		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
@@ -118,7 +115,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("{}"))
 		return
 	}
-	//email := UserInput.Email
 	username := UserInput.Username
 	password := UserInput.Password
 
@@ -161,35 +157,40 @@ func (h *Handler) GetBoardsById(w http.ResponseWriter, r *http.Request) {
 	}
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		http.Error(w, "Токен не предоставлен", http.StatusUnauthorized)
-		return
+		//http.Error(w, "Токен не предоставлен", http.StatusUnauthorized)
+		//return
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-	User, err := h.AuthService.GetUserFromToken(tokenString)
+	_ = tokenString
+	//User, err := h.AuthService.GetUserFromToken(tokenString)
+	User, err := h.AuthService.GetCurrentUser()
 	_ = User
 	if err != nil {
 		http.Error(w, "401 : Unauthorized", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusOK)
 		log.Println("error:", err)
 		return
 	}
 	Boards := h.BoardService.GetBoards()
 	json_User, errU := json.Marshal(User)
+	_ = json_User
 	json_Boards, errB := json.Marshal(Boards)
 	if errU != nil || errB != nil {
 		log.Printf("error while serialize User: %s", errU)
 		log.Printf("error while serialize Boars: %s", errB)
 		return
 	}
+	log.Printf("- GetBoards")
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"user": ` + string(json_User) + `, "boards": ` + string(json_Boards) + `}`))
+	w.Write(json_Boards)
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	user, err := h.AuthService.GetCurrentUser()
 	if err != nil {
 		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusOK)
 		log.Println("error:", err)
 		return
 	}

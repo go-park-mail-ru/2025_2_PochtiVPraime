@@ -143,7 +143,7 @@ func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error
 
 func (as *AuthService) GetCurrentUser() (*models.User, error) {
 	if currentUser.Email == "" {
-		return nil, errors.New("Не зарегистрирован")
+		return nil, errors.New("Не авторизирован")
 	}
 	return &currentUser, nil
 }
