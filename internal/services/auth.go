@@ -3,7 +3,6 @@ package services
 import (
 	"errors"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
@@ -45,7 +44,7 @@ func NewAuthService() *AuthService {
 // --TODO: Сохранить пользователя в базу данных (пока что в памяти)
 // --TODO: Вернуть *models.User без пароля
 func (as *AuthService) Register(email, username, password string) (*models.User, error) {
-	if len(storeBoards) == 0 {
+	if len(storeUsers) == 0 {
 		userId = 0
 	} else {
 		userId++
@@ -111,7 +110,7 @@ func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error
 	// Парсим токен без проверки подписи (только для получения claims)
 	token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
 	if err != nil {
-		return nil, err
+		return nil, errors.New("jwt.NewParser().ParseUnverified")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
@@ -120,15 +119,22 @@ func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error
 	}
 
 	// Получаем user_id из claims
-	userId, ok := claims["user_id"].(string)
+	id, ok := claims["userId"]
 	if !ok {
 		return nil, errors.New("user_id не найден в токене")
 	}
+
 	var user models.User
+	currentId, ok := id.(float64)
+	if !ok {
+		return nil, errors.New("не смог привести user_id к int")
+	}
+
 	for key, value := range storeUsers {
-		if strconv.Itoa(value.ID) == userId {
+		if float64(value.ID) == currentId {
 			user = storeUsers[key]
 		}
 	}
+	log.Println(user)
 	return &user, nil
 }

@@ -170,6 +170,7 @@ func (h *Handler) GetBoardsById(w http.ResponseWriter, r *http.Request) {
 	_ = User
 	if err != nil {
 		http.Error(w, "401 : Unauthorized", http.StatusUnauthorized)
+		log.Println("error:", err)
 		return
 	}
 	Boards := h.BoardService.GetBoards()
