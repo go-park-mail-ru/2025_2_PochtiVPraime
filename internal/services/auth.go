@@ -1,16 +1,21 @@
 package services
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // JWT_SECRET секрет для подписи токенов (в продакшене — из переменных окружения)
 // TODO: Вынести в .env или переменные окружения (os.Getenv)
-const JWT_SECRET = "super-secret-key-1234567890" // временно! Заменить на случайную строку!
+var JWT_SECRET = []byte("super-secret-key-1234567890") // временно! Заменить на случайную строку!
 
 // AuthService сервис для аутентификации и авторизации
 // TODO: В будущем добавить:
@@ -22,7 +27,7 @@ type AuthService struct {
 }
 
 var userId int = 0
-var storeUsers map[string]models.User = map[string]models.User{}
+var storeUsers = map[string]models.User{}
 
 // NewAuthService — конструктор для Dependency Injection
 // TODO: В будущем принимать db, logger, hasher
@@ -37,9 +42,9 @@ func NewAuthService() *AuthService {
 // TODO: Проверить, что username не пустой
 // TODO: Проверить, что password не короче 6 символов
 // TODO: Проверить, что пользователь с таким email уже не существует
-// TODO: Хешировать пароль
-// TODO: Сохранить пользователя в базу данных (пока что в памяти)
-// TODO: Вернуть *models.User без пароля
+// --TODO: Хешировать пароль
+// --TODO: Сохранить пользователя в базу данных (пока что в памяти)
+// --TODO: Вернуть *models.User без пароля
 func (as *AuthService) Register(email, username, password string) (*models.User, error) {
 	if len(storeBoards) == 0 {
 		userId = 0
@@ -52,20 +57,27 @@ func (as *AuthService) Register(email, username, password string) (*models.User,
 		log.Printf("error while encode password: %s", err)
 		return nil, err
 	}
+	_, flag := storeUsers[username]
+	if flag {
+		log.Printf(" user already exist: %s", err)
+		return nil, err
+	}
+
 	storeUsers[username] = models.User{ID: userId, Email: email, Username: username, Password: string(encode_pass)}
 	newUser := storeUsers[username]
+	log.Println(storeUsers[username])
+	//log.Println(len(storeUsers))
 	return &newUser, nil
 }
 
 // Login — авторизует пользователя и возвращает JWT токен
-// TODO: Проверить, что email и password не пустые
+// --TODO: Проверить, что email и password не пустые
 // --TODO: Найти пользователя по email
 // --TODO: Сравнить пароль (когда будем хешировать — использовать bcrypt.CompareHashAndPassword)
-// TODO: Создать JWT токен с payload: { "userId": 123, "exp": 1720000000 }
-// TODO: Вернуть токен и nil — если всё ок
-// TODO: Вернуть ошибку "неправильный email или пароль" — если не найден
+// --TODO: Создать JWT токен с payload: { "userId": 123, "exp": 1720000000 }
+// --TODO: Вернуть токен и nil — если всё ок
+// --TODO: Вернуть ошибку "неправильный email или пароль" — если не найден
 func (as *AuthService) Login(username, password string) (string, error) {
-	// Пока просто возвращаем пустую строку — заглушка
 	User, flag := storeUsers[username]
 	if !flag {
 		log.Printf("wrong username")
@@ -77,7 +89,14 @@ func (as *AuthService) Login(username, password string) (string, error) {
 		return "", err
 	}
 
-	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", nil
+	claims := jwt.MapClaims{
+		"userId": storeUsers[username].ID,
+		"exp":    time.Now().Add(time.Hour * 24).Unix(), // Срок действия — 24 часа
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString(JWT_SECRET)
 }
 
 // GetUserFromToken — расшифровывает JWT и возвращает пользователя по ID
@@ -88,6 +107,24 @@ func (as *AuthService) Login(username, password string) (string, error) {
 // TODO: Вернуть *User и nil — если токен валиден
 // TODO: Вернуть nil и ошибку — если токен невалиден (истёк, подделан, отсутствует)
 func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error) {
-	// Пока просто возвращаем nil — заглушка
-	return nil, nil
+	var base64Url = strings.Split(tokenString, ".")[1]
+	//newBase64 := strings.ReplaceAll(base64Url,"-","+")
+	//newBase64 = strings.ReplaceAll(newBase64,"_","/")
+	decoded, err := base64.StdEncoding.DecodeString(base64Url)
+	if err != nil {
+		log.Printf("error while decode base64Url: %s", err)
+		return nil, err
+	}
+
+	// Парсим JSON
+	var paiload string
+	errJ := json.Unmarshal(decoded, paiload)
+	if errJ != nil {
+		log.Printf("error while parse Json: %s", errJ)
+		return nil, err
+	}
+
+	log.Println(paiload + " - paiload")
+	user := storeUsers["sam"]
+	return &user, nil
 }

@@ -27,7 +27,7 @@ func NewHandler() *Handler {
 	}
 }
 
-// Register — обрабатывает POST /register
+// Register — обрабатывает POST api/auth/register
 // --TODO: Проверить, что метод POST (иначе 405)
 // --TODO: Декодировать JSON из тела запроса (email, username, password)
 // --TODO: Проверить, что email не пустой и содержит "@"
@@ -75,7 +75,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	validUser, err := h.AuthService.Register(email, username, password)
-	_ = validUser
 	if err != nil {
 		log.Printf("error while saving User in Service: %s", err)
 		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
@@ -95,7 +94,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	//w.WriteHeader(http.StatusOK)
 }
 
-// Login — обрабатывает POST /login
+// Login — обрабатывает POST api/auth/login
 // --TODO: Проверить, что метод POST (иначе 405)
 // --TODO: Декодировать JSON из тела запроса (email, password)
 // --TODO: Проверить, что email и password не пустые
@@ -137,13 +136,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("{tocken:" + JWT + "}"))
+	w.Write([]byte("{token:" + JWT + "}"))
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"message": "200 : OK"}`))
-	w.WriteHeader(http.StatusOK)
+	//w.Write([]byte(`{"message": "200 : OK"}`))
+	//w.WriteHeader(http.StatusOK)
 }
 
-// GetBoards — обрабатывает GET /get-boards
+// GetBoards — обрабатывает GET /api/boards
 // --TODO: Проверить, что метод GET (иначе 405)
 // --TODO: Получить заголовок Authorization из r.Header
 // --TODO: Проверить, что он начинается с "Bearer "
@@ -152,7 +151,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // --TODO: Если токен невалиден — вернуть 401
 // --TODO: Если токен валиден — получить доски через h.BoardService.GetBoards()
 // TODO: Вернуть 200 с JSON: { "user": { "id", "email", "username" }, "boards": [...] }
-func (h *Handler) GetBoards(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetBoardsById(w http.ResponseWriter, r *http.Request) {
 	// Пока просто отвечаем заглушкой
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -184,4 +183,8 @@ func (h *Handler) GetBoards(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"user": ` + string(json_User) + `, "boards": ` + string(json_Boards) + `}`))
+}
+
+func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
+
 }

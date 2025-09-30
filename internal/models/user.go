@@ -5,7 +5,7 @@ type User struct {
 	ID       int    `json:"id"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
-	Password string `json:"password"`// TODO: Добавить поле Password (но не отправлять в ответе через json:"-")
+	Password string `json:"password"` // TODO: Добавить поле Password (но не отправлять в ответе через json:"-")
 	// TODO: Добавить CreatedAt для регистрации
 	// TODO: Добавить UpdatedAt для изменений
 }
