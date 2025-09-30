@@ -31,7 +31,7 @@ func main() {
 	*/
 	mux.HandleFunc("/api/auth/register", h.Register)
 	mux.HandleFunc("/api/auth/login", h.Login)
-	mux.HandleFunc("/api/auth/me", h.Login)
+	mux.HandleFunc("/api/auth/me", h.Me)
 	mux.HandleFunc("/api/boards", h.GetBoardsById)
 
 	// Настройка CORS с помощью библиотеки

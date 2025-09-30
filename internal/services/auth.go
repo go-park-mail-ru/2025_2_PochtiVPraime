@@ -24,6 +24,8 @@ type AuthService struct {
 	// Поля будут добавлены позже пока пусто
 }
 
+var currentUser models.User
+
 var userId int = 0
 var storeUsers = map[string]models.User{}
 
@@ -86,7 +88,7 @@ func (as *AuthService) Login(username, password string) (string, error) {
 		log.Printf("Wrong password: %s", err)
 		return "", err
 	}
-
+	currentUser = User
 	claims := jwt.MapClaims{
 		"userId": storeUsers[username].ID,
 		"exp":    time.Now().Add(time.Hour * 24).Unix(), // Срок действия — 24 часа
@@ -137,4 +139,11 @@ func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error
 	}
 	log.Println(user)
 	return &user, nil
+}
+
+func (as *AuthService) GetCurrentUser() (*models.User, error) {
+	if currentUser.Email == "" {
+		return nil, errors.New("Не зарегистрирован")
+	}
+	return &currentUser, nil
 }

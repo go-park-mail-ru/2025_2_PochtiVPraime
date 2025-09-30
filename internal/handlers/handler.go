@@ -80,7 +80,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
 		return
 	}
-
+	validUser.Password = ""
 	json_User, err := json.Marshal(validUser)
 	if err != nil {
 		log.Printf("error while marshalling User: %s", err)
@@ -186,6 +186,21 @@ func (h *Handler) GetBoardsById(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"user": ` + string(json_User) + `, "boards": ` + string(json_Boards) + `}`))
 }
 
-func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
+	user, err := h.AuthService.GetCurrentUser()
+	if err != nil {
+		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
+		log.Println("error:", err)
+		return
+	}
 
+	user.Password = ""
+	json_User, err := json.Marshal(user)
+	if err != nil {
+		log.Printf("error while marshalling User: %s", err)
+		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+		return
+	}
+	w.Write([]byte(json_User))
+	log.Printf(string(json_User))
 }
