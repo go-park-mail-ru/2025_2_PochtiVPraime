@@ -1,10 +1,9 @@
 package services
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -107,24 +106,29 @@ func (as *AuthService) Login(username, password string) (string, error) {
 // TODO: Вернуть *User и nil — если токен валиден
 // TODO: Вернуть nil и ошибку — если токен невалиден (истёк, подделан, отсутствует)
 func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error) {
-	var base64Url = strings.Split(tokenString, ".")[1]
-	//newBase64 := strings.ReplaceAll(base64Url,"-","+")
-	//newBase64 = strings.ReplaceAll(newBase64,"_","/")
-	decoded, err := base64.StdEncoding.DecodeString(base64Url)
+	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+
+	// Парсим токен без проверки подписи (только для получения claims)
+	token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
 	if err != nil {
-		log.Printf("error while decode base64Url: %s", err)
 		return nil, err
 	}
 
-	// Парсим JSON
-	var paiload string
-	errJ := json.Unmarshal(decoded, paiload)
-	if errJ != nil {
-		log.Printf("error while parse Json: %s", errJ)
-		return nil, err
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("неверный формат claims")
 	}
 
-	log.Println(paiload + " - paiload")
-	user := storeUsers["sam"]
+	// Получаем user_id из claims
+	userId, ok := claims["user_id"].(string)
+	if !ok {
+		return nil, errors.New("user_id не найден в токене")
+	}
+	var user models.User
+	for key, value := range storeUsers {
+		if strconv.Itoa(value.ID) == userId {
+			user = storeUsers[key]
+		}
+	}
 	return &user, nil
 }
