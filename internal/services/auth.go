@@ -53,11 +53,6 @@ func NewAuthService() *AuthService {
 // --TODO: Сохранить пользователя в базу данных (пока что в памяти)
 // --TODO: Вернуть *models.User без пароля
 func (as *AuthService) Register(email, username, password string) (*models.User, error) {
-	if len(storeUsers) == 0 {
-		userId = 0
-	} else {
-		userId++
-	}
 	cost := bcrypt.DefaultCost
 	encode_pass, err := bcrypt.GenerateFromPassword([]byte(password), cost)
 	if err != nil {
@@ -73,7 +68,7 @@ func (as *AuthService) Register(email, username, password string) (*models.User,
 	storeUsers[username] = models.User{ID: userId, Email: email, Username: username, Password: string(encode_pass)}
 	newUser := storeUsers[username]
 	log.Println(storeUsers[username])
-	//log.Println(len(storeUsers))
+	userId++
 	return &newUser, nil
 }
 

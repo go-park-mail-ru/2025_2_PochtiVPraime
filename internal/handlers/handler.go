@@ -135,7 +135,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    JWT, //сюда записать токен
 		Path:     "/",
 		HttpOnly: true,                    // Доступ только через HTTP, защита от XSS
-		Secure:   true,                    // Только HTTPS
+		Secure:   false,                   // Только HTTPS
 		SameSite: http.SameSiteStrictMode, // Защита от CSRF
 		MaxAge:   900,                     // время жизни куки в секундах (поставил 15 минут)
 	}
