@@ -23,7 +23,11 @@ func main() {
 	mux.HandleFunc("/api/auth/register", h.Register)
 	mux.HandleFunc("/api/auth/login", h.Login)
 	mux.HandleFunc("/api/auth/me", h.Me)
-	mux.HandleFunc("/api/boards", h.GetBoardsById)
+	mux.HandleFunc("/api/boards", h.GetBoards)
+	mux.HandleFunc("/api/auth/logout", h.Logout)
+	mux.HandleFunc("/api/set-cookie", h.SetCookieHandler)
+	mux.HandleFunc("/api/boards/{id}", h.BoardDelete)
+	mux.HandleFunc("/api/boards/{boardId}/restore", h.BoardRestore)
 
 	// Настройка CORS с помощью библиотеки
 	c := cors.New(cors.Options{

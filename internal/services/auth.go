@@ -147,3 +147,7 @@ func (as *AuthService) GetCurrentUser() (*models.User, error) {
 	}
 	return &currentUser, nil
 }
+
+func (as *AuthService) LogoutUser() {
+	currentUser = models.User{}
+}

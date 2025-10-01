@@ -1,11 +1,14 @@
 package services
 
-import "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+import (
+	"errors"
+	"slices"
+
+	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+)
 
 var boardsId int
-var storeBoards map[int]models.Board
-
-var test = models.BoardsData{
+var storeBoards = models.BoardsData{
 	ActiveBoards: []models.Board{
 		{
 			Id:        "board_1",
@@ -73,17 +76,47 @@ func NewBoardService() *BoardService {
 // TODO: Получить доски только для авторизованного пользователя (по userId)
 // TODO: Загружать доски из базы данных (ну или пока что просто из списка)
 func (bs *BoardService) GetBoards() models.BoardsData {
-	// Пока возвращаем пустой список
-	return test
+	return storeBoards
 }
 
 // AddBoard — создаёт новую доску, не обязательно, но как будто бы надо
-// TODO: Проверить, что name не пустой
+// --TODO: Проверить, что title не пустой
 // TODO: Проверить, что пользователь авторизован (через session)
 // TODO: Сохранить доску в БД с привязкой к userId
 // TODO: Вернуть созданную доску
-func (bs *BoardService) AddBoard(name string) (*models.Board, error) {
-	// Пока просто возвращаем nil
+func (bs *BoardService) AddBoard(board models.Board) error {
 
-	return nil, nil
+	if board.Title == "" {
+		return errors.New("Нет Title")
+	}
+	board.Archived = false
+	if currentUser.Email == "" {
+		return errors.New("Пользователь не авторизирован")
+	}
+	board.OwnerId = currentUser.ID
+	storeBoards.ActiveBoards = append(storeBoards.ActiveBoards, board)
+	return nil
+}
+
+func (bs *BoardService) DeleteBoard(boardId string) error {
+	// Пока просто возвращаем nil
+	for key, value := range storeBoards.ArchivedBoards {
+		if value.Id == boardId {
+			storeBoards.ArchivedBoards = slices.Delete(storeBoards.ArchivedBoards, key, key+1)
+			return nil
+		}
+	}
+	return errors.New("Такой доски не существует в ArchivedBoards")
+}
+
+func (bs *BoardService) RestoreBoard(boardId string) error {
+	for key, value := range storeBoards.ArchivedBoards {
+		if value.Id == boardId {
+			value.Archived = false
+			storeBoards.ActiveBoards = append(storeBoards.ActiveBoards, value)
+			storeBoards.ArchivedBoards = slices.Delete(storeBoards.ArchivedBoards, key, key+1)
+			return nil
+		}
+	}
+	return errors.New("Не удалось восстановить доску")
 }

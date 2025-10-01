@@ -100,7 +100,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 // --TODO: Если ошибка — вернуть 401 с сообщением "неправильный email или пароль"
 // --TODO: Если успех — вернуть 200 с JSON: { "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	log.Printf("login")
 	if r.Method != http.MethodPost {
 		log.Printf("Запрос " + r.Method + ",а должен быть POST")
 		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
@@ -138,6 +137,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	//w.WriteHeader(http.StatusOK)
 }
 
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	h.AuthService.LogoutUser()
+}
+
 // GetBoards — обрабатывает GET /api/boards
 // --TODO: Проверить, что метод GET (иначе 405)
 // --TODO: Получить заголовок Authorization из r.Header
@@ -147,43 +150,60 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // --TODO: Если токен невалиден — вернуть 401
 // --TODO: Если токен валиден — получить доски через h.BoardService.GetBoards()
 // TODO: Вернуть 200 с JSON: { "user": { "id", "email", "username" }, "boards": [...] }
-func (h *Handler) GetBoardsById(w http.ResponseWriter, r *http.Request) {
-	// Пока просто отвечаем заглушкой
-	if r.Method != http.MethodGet {
+func (h *Handler) GetBoards(w http.ResponseWriter, r *http.Request) {
+	log.Println("GetBoard")
+	switch r.Method {
+	case http.MethodPost:
+		decoder := json.NewDecoder(r.Body)
+		newBoard := new(models.Board)
+		err := decoder.Decode(newBoard)
+		if err != nil {
+			log.Printf("error while unmarshalling JSON: %s", err)
+			w.Write([]byte("{}"))
+			return
+		}
+		err = h.BoardService.AddBoard(*newBoard)
+		if err != nil {
+			log.Printf("error while create Board: %s", err)
+			http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+			return
+		}
+	case http.MethodGet:
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			//http.Error(w, "Токен не предоставлен", http.StatusUnauthorized)
+			//return
+		}
+		h.BoardService.GetBoards()
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		_ = tokenString
+		//User, err := h.AuthService.GetUserFromToken(tokenString)
+		User, err := h.AuthService.GetCurrentUser()
+		_ = User
+		if err != nil {
+			http.Error(w, "401 : Unauthorized", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusOK)
+			log.Println("error:", err)
+			return
+		}
+		Boards := h.BoardService.GetBoards()
+		json_User, errU := json.Marshal(User)
+		_ = json_User
+		json_Boards, errB := json.Marshal(Boards)
+		if errU != nil || errB != nil {
+			log.Printf("error while serialize User: %s", errU)
+			log.Printf("error while serialize Boars: %s", errB)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(json_Boards)
+	default:
 		w.WriteHeader(http.StatusNotAcceptable)
 		w.Write([]byte(`{"message": "405 : NotAcceptable"}`))
-		log.Printf("Запрос " + r.Method + ",а должен быть GET")
+		log.Printf("Запрос " + r.Method + ",а должен быть GET или POST")
 		return
-	}
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		//http.Error(w, "Токен не предоставлен", http.StatusUnauthorized)
-		//return
 	}
 
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-	_ = tokenString
-	//User, err := h.AuthService.GetUserFromToken(tokenString)
-	User, err := h.AuthService.GetCurrentUser()
-	_ = User
-	if err != nil {
-		http.Error(w, "401 : Unauthorized", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusOK)
-		log.Println("error:", err)
-		return
-	}
-	Boards := h.BoardService.GetBoards()
-	json_User, errU := json.Marshal(User)
-	_ = json_User
-	json_Boards, errB := json.Marshal(Boards)
-	if errU != nil || errB != nil {
-		log.Printf("error while serialize User: %s", errU)
-		log.Printf("error while serialize Boars: %s", errB)
-		return
-	}
-	log.Printf("- GetBoards")
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(json_Boards)
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
@@ -204,4 +224,27 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte(json_User))
 	log.Printf(string(json_User))
+}
+
+func (h *Handler) BoardDelete(w http.ResponseWriter, r *http.Request) {
+	vars := r.PathValue("id")
+	h.BoardService.DeleteBoard(vars)
+}
+
+func (h *Handler) BoardRestore(w http.ResponseWriter, r *http.Request) {
+	vars := r.PathValue("boardId")
+	h.BoardService.RestoreBoard(vars)
+}
+
+func (h *Handler) SetCookieHandler(w http.ResponseWriter, r *http.Request) {
+	cookie := &http.Cookie{
+		Name:     "session_id",
+		Value:    "token", //сюда записать токен
+		Path:     "/",
+		HttpOnly: true,                    // Доступ только через HTTP, защита от XSS
+		Secure:   true,                    // Только HTTPS
+		SameSite: http.SameSiteStrictMode, // Защита от CSRF
+	}
+	http.SetCookie(w, cookie)
+	w.Write([]byte("Cookie set!"))
 }
