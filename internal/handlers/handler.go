@@ -124,14 +124,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	JWT, err := h.AuthService.Login(username, password)
-	_ = JWT
 	if err != nil {
 		log.Printf("error while authorizate: %s", err)
 		http.Error(w, "401 : Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	w.Write([]byte("{token:" + JWT + "}"))
+	w.Write([]byte("{\"Authorization\": \"Bearer " + JWT + "\"}"))
 	w.Header().Set("Content-Type", "application/json")
 	//w.Write([]byte(`{"message": "200 : OK"}`))
 	//w.WriteHeader(http.StatusOK)

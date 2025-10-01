@@ -20,7 +20,7 @@ var storeBoards = models.BoardsData{
 		},
 		{
 			Id:        "board_2",
-			OwnerId:   1,
+			OwnerId:   2,
 			Title:     "Рабочие задачи",
 			Image:     "/Images/default-board-bg.jpg",
 			Archived:  false,
@@ -38,7 +38,7 @@ var storeBoards = models.BoardsData{
 
 	ArchivedBoards: []models.Board{{
 		Id:        "board_4",
-		OwnerId:   1,
+		OwnerId:   2,
 		Title:     "Проект А",
 		Image:     "/Images/default-board-bg.jpg",
 		Archived:  true,
@@ -54,7 +54,7 @@ var storeBoards = models.BoardsData{
 		},
 		{
 			Id:        "board_6",
-			OwnerId:   1,
+			OwnerId:   2,
 			Title:     "Идеи",
 			Image:     "/Images/default-board-bg.jpg",
 			Archived:  true,
@@ -76,7 +76,18 @@ func NewBoardService() *BoardService {
 // TODO: Получить доски только для авторизованного пользователя (по userId)
 // TODO: Загружать доски из базы данных (ну или пока что просто из списка)
 func (bs *BoardService) GetBoards() models.BoardsData {
-	return storeBoards
+	var userBoards = models.BoardsData{}
+	for _, value := range storeBoards.ActiveBoards {
+		if value.OwnerId == currentUser.ID {
+			userBoards.ActiveBoards = append(userBoards.ActiveBoards, value)
+		}
+	}
+	for _, value := range storeBoards.ArchivedBoards {
+		if value.OwnerId == currentUser.ID {
+			userBoards.ArchivedBoards = append(userBoards.ArchivedBoards, value)
+		}
+	}
+	return userBoards
 }
 
 // AddBoard — создаёт новую доску, не обязательно, но как будто бы надо

@@ -110,14 +110,30 @@ func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
 	// Парсим токен без проверки подписи (только для получения claims)
-	token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
+	//token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+
+			return nil, errors.New("unexpected signing method for JWT token")
+
+		}
+
+		return []byte(JWT_SECRET), nil
+
+	})
+
 	if err != nil {
-		return nil, errors.New("jwt.NewParser().ParseUnverified")
+
+		log.Println("JWT parsing error:", err)
+
+		return nil, errors.New("JWT parsing error:")
+
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, errors.New("неверный формат claims")
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token")
 	}
 
 	// Получаем user_id из claims
