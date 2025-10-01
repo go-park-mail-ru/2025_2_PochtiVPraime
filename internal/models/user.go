@@ -2,7 +2,7 @@ package models
 
 // User — модель пользователя (данные, которые мы храним и передаём)
 type User struct {
-	ID       int    `json:"id"`
+	ID       int    `json:"-"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
 	Password string `json:"password"` // TODO: Добавить поле Password (но не отправлять в ответе через json:"-")

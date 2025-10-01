@@ -126,18 +126,34 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	JWT, err := h.AuthService.Login(username, password)
 	if err != nil {
 		log.Printf("error while authorizate: %s", err)
-		http.Error(w, "401 : Unauthorized", http.StatusUnauthorized)
+		http.Error(w, "401 : Неверный логин или пароль", http.StatusUnauthorized)
 		return
 	}
+	//установка куки
+	cookie := &http.Cookie{
+		Name:     "session_id",
+		Value:    JWT, //сюда записать токен
+		Path:     "/",
+		HttpOnly: true,                    // Доступ только через HTTP, защита от XSS
+		Secure:   true,                    // Только HTTPS
+		SameSite: http.SameSiteStrictMode, // Защита от CSRF
+		MaxAge:   900,                     // время жизни куки в секундах (поставил 15 минут)
+	}
+	http.SetCookie(w, cookie)
 
-	w.Write([]byte("{\"Authorization\": \"Bearer " + JWT + "\"}"))
 	w.Header().Set("Content-Type", "application/json")
-	//w.Write([]byte(`{"message": "200 : OK"}`))
-	//w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	h.AuthService.LogoutUser()
+	cookie := &http.Cookie{
+		Name:   "session_id",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1, // Удаление куки
+	}
+	http.SetCookie(w, cookie)
+	h.AuthService.Logout()
+	w.Write([]byte("Cookie deleted!"))
 }
 
 // GetBoards — обрабатывает GET /api/boards
@@ -168,37 +184,31 @@ func (h *Handler) GetBoards(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case http.MethodGet:
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			//http.Error(w, "Токен не предоставлен", http.StatusUnauthorized)
-			//return
+		cookie, err := r.Cookie("session_id")
+		if err != nil {
+			http.Error(w, "Cookie not found", http.StatusNotFound)
+			return
 		}
-		h.BoardService.GetBoards()
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		_ = tokenString
-		//User, err := h.AuthService.GetUserFromToken(tokenString)
-		User, err := h.AuthService.GetCurrentUser()
+
+		tokenString := cookie.Value
+		User, err := h.AuthService.GetUserFromToken(tokenString)
+		//User, err := h.AuthService.GetCurrentUser()
 		_ = User
 		if err != nil {
-			http.Error(w, "401 : Unauthorized", http.StatusUnauthorized)
-			w.WriteHeader(http.StatusOK)
+			http.Error(w, "401 : Unauthorized or JWT not valid", http.StatusUnauthorized)
 			log.Println("error:", err)
 			return
 		}
 		Boards := h.BoardService.GetBoards()
-		json_User, errU := json.Marshal(User)
-		_ = json_User
 		json_Boards, errB := json.Marshal(Boards)
-		if errU != nil || errB != nil {
-			log.Printf("error while serialize User: %s", errU)
+		if errB != nil {
 			log.Printf("error while serialize Boars: %s", errB)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(json_Boards)
 	default:
-		w.WriteHeader(http.StatusNotAcceptable)
-		w.Write([]byte(`{"message": "405 : NotAcceptable"}`))
+		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
 		log.Printf("Запрос " + r.Method + ",а должен быть GET или POST")
 		return
 	}
@@ -206,10 +216,15 @@ func (h *Handler) GetBoards(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
-	user, err := h.AuthService.GetCurrentUser()
+	cookie, err := r.Cookie("session_id")
 	if err != nil {
-		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusOK)
+		http.Error(w, "Cookie not found", http.StatusNotFound)
+		return
+	}
+	tokenString := cookie.Value
+	user, err := h.AuthService.GetUserFromToken(tokenString)
+	if err != nil {
+		http.Error(w, "401 : Unauthorized or JWT not valid", http.StatusUnauthorized)
 		log.Println("error:", err)
 		return
 	}
@@ -233,17 +248,4 @@ func (h *Handler) BoardDelete(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) BoardRestore(w http.ResponseWriter, r *http.Request) {
 	vars := r.PathValue("boardId")
 	h.BoardService.RestoreBoard(vars)
-}
-
-func (h *Handler) SetCookieHandler(w http.ResponseWriter, r *http.Request) {
-	cookie := &http.Cookie{
-		Name:     "session_id",
-		Value:    "token", //сюда записать токен
-		Path:     "/",
-		HttpOnly: true,                    // Доступ только через HTTP, защита от XSS
-		Secure:   true,                    // Только HTTPS
-		SameSite: http.SameSiteStrictMode, // Защита от CSRF
-	}
-	http.SetCookie(w, cookie)
-	w.Write([]byte("Cookie set!"))
 }

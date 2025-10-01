@@ -7,9 +7,17 @@ import (
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
 )
 
-var boardsId int
+var boardId int = 7
 var storeBoards = models.BoardsData{
 	ActiveBoards: []models.Board{
+		{
+			Id:        "board_0",
+			OwnerId:   0,
+			Title:     "test_board",
+			Image:     "",
+			Archived:  false,
+			CreatedAt: " ",
+		},
 		{
 			Id:        "board_1",
 			OwnerId:   1,
@@ -104,6 +112,8 @@ func (bs *BoardService) AddBoard(board models.Board) error {
 	if currentUser.Email == "" {
 		return errors.New("Пользователь не авторизирован")
 	}
+	board.Id = "board_" + string(boardId)
+	boardId++
 	board.OwnerId = currentUser.ID
 	storeBoards.ActiveBoards = append(storeBoards.ActiveBoards, board)
 	return nil

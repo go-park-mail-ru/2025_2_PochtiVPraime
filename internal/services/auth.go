@@ -26,8 +26,15 @@ type AuthService struct {
 
 var currentUser models.User
 
-var userId int = 0
-var storeUsers = map[string]models.User{}
+var userId int = 1
+var storeUsers = map[string]models.User{
+	"test": {
+		ID:       0,
+		Email:    "test@test.ru",
+		Username: "test",
+		Password: "$2a$10$9Glh6oCZt8eDdnxwy7lLkutaAk.jXs474FAI7OK3C5kUnKSuRQAAu", //"password"
+	},
+}
 
 // NewAuthService — конструктор для Dependency Injection
 // TODO: В будущем принимать db, logger, hasher
@@ -157,13 +164,6 @@ func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error
 	return &user, nil
 }
 
-func (as *AuthService) GetCurrentUser() (*models.User, error) {
-	if currentUser.Email == "" {
-		return nil, errors.New("Не авторизирован")
-	}
-	return &currentUser, nil
-}
-
-func (as *AuthService) LogoutUser() {
+func (as *AuthService) Logout() {
 	currentUser = models.User{}
 }

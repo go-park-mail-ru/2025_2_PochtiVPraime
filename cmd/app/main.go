@@ -25,7 +25,6 @@ func main() {
 	mux.HandleFunc("/api/auth/me", h.Me)
 	mux.HandleFunc("/api/boards", h.GetBoards)
 	mux.HandleFunc("/api/auth/logout", h.Logout)
-	mux.HandleFunc("/api/set-cookie", h.SetCookieHandler)
 	mux.HandleFunc("/api/boards/{id}", h.BoardDelete)
 	mux.HandleFunc("/api/boards/{boardId}/restore", h.BoardRestore)
 
