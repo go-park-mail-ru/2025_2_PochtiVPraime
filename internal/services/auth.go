@@ -61,8 +61,15 @@ func (as *AuthService) Register(email, username, password string) (*models.User,
 	}
 	_, flag := storeUsers[username]
 	if flag {
-		log.Printf(" user already exist: %s", err)
-		return nil, err
+		log.Printf(" Такое имя уже занято")
+		return nil, errors.New("Такое имя уже занято")
+	}
+
+	for _, user := range storeUsers {
+		if email == user.Email {
+			log.Printf("Пользователь с таким email уже существует")
+			return nil, errors.New("Пользователь с таким email уже существует")
+		}
 	}
 
 	storeUsers[username] = models.User{ID: userId, Email: email, Username: username, Password: string(encode_pass)}
@@ -83,12 +90,12 @@ func (as *AuthService) Login(username, password string) (string, error) {
 	User, flag := storeUsers[username]
 	if !flag {
 		log.Printf("wrong username")
-		return "", errors.New("Нет пользователя с таким username")
+		return "", errors.New("Нет пользователя с таким именем")
 	}
 	err := bcrypt.CompareHashAndPassword([]byte(User.Password), []byte(password))
 	if err != nil {
 		log.Printf("Wrong password: %s", err)
-		return "", err
+		return "", errors.New("Неправильный пароль")
 	}
 	currentUser = User
 	claims := jwt.MapClaims{
@@ -116,7 +123,7 @@ func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-
+			log.Println("unexpected signing method for JWT token")
 			return nil, errors.New("unexpected signing method for JWT token")
 
 		}
@@ -135,18 +142,21 @@ func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
+		log.Println("invalid token")
 		return nil, errors.New("invalid token")
 	}
 
 	// Получаем user_id из claims
 	id, ok := claims["userId"]
 	if !ok {
+		log.Println("user_id не найден в токен")
 		return nil, errors.New("user_id не найден в токене")
 	}
 
 	var user models.User
 	currentId, ok := id.(float64)
 	if !ok {
+		log.Println("не смог привести user_id к int")
 		return nil, errors.New("не смог привести user_id к int")
 	}
 

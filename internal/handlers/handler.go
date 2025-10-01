@@ -77,14 +77,14 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	validUser, err := h.AuthService.Register(email, username, password)
 	if err != nil {
 		log.Printf("error while saving User in Service: %s", err)
-		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+		http.Error(w, "400 : "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	validUser.Password = ""
 	json_User, err := json.Marshal(validUser)
 	if err != nil {
 		log.Printf("error while marshalling User: %s", err)
-		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+		http.Error(w, "400 : "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.Write([]byte(json_User))
@@ -126,7 +126,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	JWT, err := h.AuthService.Login(username, password)
 	if err != nil {
 		log.Printf("error while authorizate: %s", err)
-		http.Error(w, "401 : Неверный логин или пароль", http.StatusUnauthorized)
+		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
 		return
 	}
 	//установка куки
@@ -180,13 +180,14 @@ func (h *Handler) GetBoards(w http.ResponseWriter, r *http.Request) {
 		err = h.BoardService.AddBoard(*newBoard)
 		if err != nil {
 			log.Printf("error while create Board: %s", err)
-			http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+			http.Error(w, "400 :"+err.Error(), http.StatusBadRequest)
 			return
 		}
 	case http.MethodGet:
 		cookie, err := r.Cookie("session_id")
 		if err != nil {
 			http.Error(w, "Cookie not found", http.StatusNotFound)
+			log.Println("Cookie not found")
 			return
 		}
 
@@ -195,7 +196,7 @@ func (h *Handler) GetBoards(w http.ResponseWriter, r *http.Request) {
 		//User, err := h.AuthService.GetCurrentUser()
 		_ = User
 		if err != nil {
-			http.Error(w, "401 : Unauthorized or JWT not valid", http.StatusUnauthorized)
+			http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
 			log.Println("error:", err)
 			return
 		}
@@ -224,7 +225,7 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	tokenString := cookie.Value
 	user, err := h.AuthService.GetUserFromToken(tokenString)
 	if err != nil {
-		http.Error(w, "401 : Unauthorized or JWT not valid", http.StatusUnauthorized)
+		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
 		log.Println("error:", err)
 		return
 	}
@@ -237,7 +238,7 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(json_User))
-	log.Printf(string(json_User))
+	//log.Printf(string(json_User))
 }
 
 func (h *Handler) BoardDelete(w http.ResponseWriter, r *http.Request) {
