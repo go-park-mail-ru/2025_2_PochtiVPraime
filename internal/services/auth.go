@@ -3,14 +3,17 @@ package services
 import (
 	"errors"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // JWT_SECRET секрет для подписи токенов (в продакшене — из переменных окружения)
 // TODO: Вынести в .env или переменные окружения (os.Getenv)
-const JWT_SECRET = "super-secret-key-1234567890" // временно! Заменить на случайную строку!
+var JWT_SECRET = []byte("super-secret-key-1234567890") // временно! Заменить на случайную строку!
 
 // AuthService сервис для аутентификации и авторизации
 // TODO: В будущем добавить:
@@ -21,8 +24,17 @@ type AuthService struct {
 	// Поля будут добавлены позже пока пусто
 }
 
-var userId int = 0
-var storeUsers map[string]models.User = map[string]models.User{}
+var currentUser models.User
+
+var userId int = 1
+var storeUsers = map[string]models.User{
+	"test": {
+		ID:       0,
+		Email:    "test@test.ru",
+		Username: "test",
+		Password: "$2a$10$9Glh6oCZt8eDdnxwy7lLkutaAk.jXs474FAI7OK3C5kUnKSuRQAAu", //"password"
+	},
+}
 
 // NewAuthService — конструктор для Dependency Injection
 // TODO: В будущем принимать db, logger, hasher
@@ -37,47 +49,63 @@ func NewAuthService() *AuthService {
 // TODO: Проверить, что username не пустой
 // TODO: Проверить, что password не короче 6 символов
 // TODO: Проверить, что пользователь с таким email уже не существует
-// TODO: Хешировать пароль
-// TODO: Сохранить пользователя в базу данных (пока что в памяти)
-// TODO: Вернуть *models.User без пароля
+// --TODO: Хешировать пароль
+// --TODO: Сохранить пользователя в базу данных (пока что в памяти)
+// --TODO: Вернуть *models.User без пароля
 func (as *AuthService) Register(email, username, password string) (*models.User, error) {
-	if len(storeBoards) == 0 {
-		userId = 0
-	} else {
-		userId++
-	}
 	cost := bcrypt.DefaultCost
 	encode_pass, err := bcrypt.GenerateFromPassword([]byte(password), cost)
 	if err != nil {
 		log.Printf("error while encode password: %s", err)
 		return nil, err
 	}
-	storeUsers[email] = models.User{ID: userId, Email: email, Username: username, Password: string(encode_pass)}
-	newUser := storeUsers[email]
+	_, flag := storeUsers[username]
+	if flag {
+		log.Printf(" Такое имя уже занято")
+		return nil, errors.New("Такое имя уже занято")
+	}
+
+	for _, user := range storeUsers {
+		if email == user.Email {
+			log.Printf("Пользователь с таким email уже существует")
+			return nil, errors.New("Пользователь с таким email уже существует")
+		}
+	}
+
+	storeUsers[username] = models.User{ID: userId, Email: email, Username: username, Password: string(encode_pass)}
+	newUser := storeUsers[username]
+	log.Println(storeUsers[username])
+	userId++
 	return &newUser, nil
 }
 
 // Login — авторизует пользователя и возвращает JWT токен
-// TODO: Проверить, что email и password не пустые
+// --TODO: Проверить, что email и password не пустые
 // --TODO: Найти пользователя по email
 // --TODO: Сравнить пароль (когда будем хешировать — использовать bcrypt.CompareHashAndPassword)
-// TODO: Создать JWT токен с payload: { "userId": 123, "exp": 1720000000 }
-// TODO: Вернуть токен и nil — если всё ок
-// TODO: Вернуть ошибку "неправильный email или пароль" — если не найден
-func (as *AuthService) Login(email, password string) (string, error) {
-	// Пока просто возвращаем пустую строку — заглушка
-	User, flag := storeUsers[email]
+// --TODO: Создать JWT токен с payload: { "userId": 123, "exp": 1720000000 }
+// --TODO: Вернуть токен и nil — если всё ок
+// --TODO: Вернуть ошибку "неправильный email или пароль" — если не найден
+func (as *AuthService) Login(username, password string) (string, error) {
+	User, flag := storeUsers[username]
 	if !flag {
-		log.Printf("wrong email")
-		return "", errors.New("Нет пользователя с таким email")
+		log.Printf("wrong username")
+		return "", errors.New("Нет пользователя с таким именем")
 	}
 	err := bcrypt.CompareHashAndPassword([]byte(User.Password), []byte(password))
 	if err != nil {
 		log.Printf("Wrong password: %s", err)
-		return "", err
+		return "", errors.New("Неправильный пароль")
+	}
+	currentUser = User
+	claims := jwt.MapClaims{
+		"userId": storeUsers[username].ID,
+		"exp":    time.Now().Add(time.Hour * 24).Unix(), // Срок действия — 24 часа
 	}
 
-	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", nil
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString(JWT_SECRET)
 }
 
 // GetUserFromToken — расшифровывает JWT и возвращает пользователя по ID
@@ -88,6 +116,59 @@ func (as *AuthService) Login(email, password string) (string, error) {
 // TODO: Вернуть *User и nil — если токен валиден
 // TODO: Вернуть nil и ошибку — если токен невалиден (истёк, подделан, отсутствует)
 func (as *AuthService) GetUserFromToken(tokenString string) (*models.User, error) {
-	// Пока просто возвращаем nil — заглушка
-	return nil, nil
+	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+
+	// Парсим токен без проверки подписи (только для получения claims)
+	//token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			log.Println("unexpected signing method for JWT token")
+			return nil, errors.New("unexpected signing method for JWT token")
+
+		}
+
+		return []byte(JWT_SECRET), nil
+
+	})
+
+	if err != nil {
+
+		log.Println("JWT parsing error:", err)
+
+		return nil, errors.New("JWT parsing error:")
+
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		log.Println("invalid token")
+		return nil, errors.New("invalid token")
+	}
+
+	// Получаем user_id из claims
+	id, ok := claims["userId"]
+	if !ok {
+		log.Println("user_id не найден в токен")
+		return nil, errors.New("user_id не найден в токене")
+	}
+
+	var user models.User
+	currentId, ok := id.(float64)
+	if !ok {
+		log.Println("не смог привести user_id к int")
+		return nil, errors.New("не смог привести user_id к int")
+	}
+
+	for key, value := range storeUsers {
+		if float64(value.ID) == currentId {
+			user = storeUsers[key]
+		}
+	}
+	log.Println(user)
+	return &user, nil
+}
+
+func (as *AuthService) Logout() {
+	currentUser = models.User{}
 }
