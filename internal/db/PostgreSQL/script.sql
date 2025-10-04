@@ -1,0 +1,108 @@
+CREATE TABLE IF NOT EXISTS user (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    avatar_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS board (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    owner_user_id INTEGER NOT null references "pochti-v-prayme"."user"(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    image TEXT,
+    archived BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    visibility TEXT DEFAULT 'private',
+)
+
+CREATE TABLE IF NOT EXISTS board_member (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    user_id INTEGER NOT NULL,
+    board_id INTEGER NOT NULL,
+    member_role TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    FOREIGN KEY (board_id) REFERENCES board(id) ON DELETE CASCADE,
+    UNIQUE(user_id, board_id)
+);
+
+CREATE TABLE IF NOT EXISTS list (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    board_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    position INTEGER,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (board_id) REFERENCES board(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS card (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    author_board_member_id INTEGER NOT NULL,
+    list_id INTEGER NOT NULL,
+    content TEXT,
+    position INTEGER,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    complete_before TIMESTAMPTZ,
+    FOREIGN KEY (author_board_member_id) REFERENCES board_member(id) ON DELETE CASCADE,
+    FOREIGN KEY (list_id) REFERENCES list(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS card_member (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    card_id INTEGER NOT NULL,
+    board_member_id INTEGER NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (card_id) REFERENCES card(id) ON DELETE CASCADE,
+    FOREIGN KEY (board_member_id) REFERENCES board_member(id) ON DELETE CASCADE,
+    UNIQUE(card_id, board_member_id)
+);
+
+CREATE TABLE IF NOT EXISTS comment (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    card_id INTEGER NOT NULL,
+    board_member_owner_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (card_id) REFERENCES card(id) ON DELETE CASCADE,
+    FOREIGN KEY (board_member_owner_id) REFERENCES board_member(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS attachment (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    card_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    file_url TEXT NOT NULL,
+    position INTEGER,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (card_id) REFERENCES card(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS checklist (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    card_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (card_id) REFERENCES card(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS checklist_point (
+    id bigint GENERATED ALWAYS AS IDENTITY,
+    checklist_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    checked BOOLEAN DEFAULT FALSE,
+    position INTEGER,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (checklist_id) REFERENCES checklist(id) ON DELETE CASCADE
+);
