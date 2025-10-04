@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS board (
     archived BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    visibility TEXT DEFAULT 'private',
-)
+    visibility TEXT DEFAULT 'private'
+);
 
 CREATE TABLE IF NOT EXISTS board_member (
     id bigint GENERATED ALWAYS AS IDENTITY,
