@@ -1,13 +1,20 @@
 
-INSERT INTO "user" (username, email, password, avatar_url, created_at, updated_at) 
+INSERT INTO upload (title, file_url, created_at, updated_at)
 VALUES 
-    ('sofia', 'sofia@mail.ru', '$2a$12$5qc0NPEzjDdPrVq6jhCVfeMRPG/K6ZcWansBSFdH6Yra0Yd9.0vRe', 'img/sofia_avatar.jpg', '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
-    ('pak', 'pak@gmail.com', '$2a$12$EJGCrfUc0oO2lzTgSOpnA.HAyEy0DbpgDXJWo85xtZvUZPmPTujwW', 'img/pak.jpg', '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
+('sofia_avatar','img/sofia_avatar.jpg','2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
+('pak_avatar','img/pak.jpg','2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
+('board_image','img/board1.jpg','2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
+('attachment_image','attachment/picture1.png','2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03');
+
+INSERT INTO "user" (username, email, password, avatar_id, created_at, updated_at) 
+VALUES 
+    ('sofia', 'sofia@mail.ru', '$2a$12$5qc0NPEzjDdPrVq6jhCVfeMRPG/K6ZcWansBSFdH6Yra0Yd9.0vRe', 1, '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
+    ('pak', 'pak@gmail.com', '$2a$12$EJGCrfUc0oO2lzTgSOpnA.HAyEy0DbpgDXJWo85xtZvUZPmPTujwW', 2, '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
     ('danila', 'danila@mail.ru', '$2a$11$fObdbVmIz6yatIyvZgIZ7.XNuF2yHP1Ro0aNh8TwsqhrmsrF5dsxm', NULL, '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03');
 
-INSERT INTO board (owner_user_id, title, image, visibility, created_at, updated_at)
+INSERT INTO board (owner_user_id, title, image_id, visibility, created_at, updated_at)
 VALUES 
-    (1, 'Задачи на неделю', 'img/board1.jpg', 'private', '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
+    (1, 'Задачи на неделю', 3, 'private', '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
     (1, 'Личные задачи', NULL, 'private', '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
     (2, 'Проект на семестр', NULL, 'public', '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03');
 
@@ -51,9 +58,9 @@ VALUES
     (1, 1, 'Проверь информацию', '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03'),
     (2, 3, 'Когда будем реализовывать?', '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03');
 
-INSERT INTO attachment (card_id, title, file_url, position, created_at, updated_at)
+INSERT INTO attachment (card_id, title, file_id, position, created_at, updated_at)
 VALUES 
-    (1, 'Фотка', 'attachment/picture1.png', 1, '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03');
+    (1, 'Фотка', 4, 1, '2025-09-01 08:20:00+03', '2025-09-01 19:10:00+03');
 
 INSERT INTO checklist (card_id, title, created_at, updated_at)
 VALUES 

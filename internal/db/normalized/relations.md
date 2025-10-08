@@ -2,12 +2,13 @@
 ## user
 Хранит данные о пользователе (почта, пароль, аватарка, дата создания и обновления аккаунта).
 ### Зависимости:
-{id} -> {username, email, password, avatar_url, created_at, updated_at}
+{id} -> {username, email, password, avatar_id, created_at, updated_at} <br>
+{avatar_id} -> {username, email, password, created_at, updated_at} 
 
 ## board
 Хранит данные доски: пользователь-создатель, название, обложка, статус (закрытая или нет), даты создания и обновления, настройки доступа (публичная, по ссылке, приватная).
 ### Зависимости:
-{id} -> {owner_user_id, title, image, archived, created_at, updated_at, visibility}
+{id} -> {owner_user_id, title, image_id, archived, created_at, updated_at, visibility}
 
 ## board_member
 Хранит данные о связи доски и пользователей, являющихся ее участниками: id пользователя и доски, роль участника (админ, участник, наблюдатель) и даты создания и обновления. 
@@ -41,7 +42,7 @@
 ## attachment
 Хранит данные о вложении к карточке: id карточки, название, ссылку на вложение, позицию среди вложений на карточке, даты создания и обновления.
 ### Зависимости:
-{id} -> {card_id, title, file_url, position, created_at, updated_at}
+{id} -> {card_id, title, file_id, position, created_at, updated_at}
 
 ## checklist
 Хранит данные о чеклисте на карточке: id карточки, название, даты создания и обновления. Только один чеклист может существовать у карточки.
@@ -55,6 +56,11 @@
 {id} -> {checklist_id, content, checked, position, created_at, updated_at} <br>
 {checklist_id, position} -> {id, content, checked, created_at, updated_at}
 
+## upload
+Хранит данные загруженных файлов: id файла, название, путь до файла, даты создания и обновления.
+### Зависимости:
+{id} -> {title, url, created_at, updated_at}
+
 # Проверка на НФБК:
 1-ая НФ: Все атрибуты являются атомарными<br>
 
@@ -62,4 +68,4 @@
 
 3-я НФ: Выполняется НФ2 и отсутствуют зависимости между неключевыми атрибутами. Каждый атрибут зависит <b>только </b> от ключа.<br>
 
-НФ Бойса-Кодда: Все детерминанты функциональных зависимостей отношений являются потенциальными ключами. Т.е. по: {user_id, board_id}; {board_id, position}, {list_id, position}; {card_id, board_member_id}; {checklist_id, position} можно однозначно определить атрибуты справа в соотвествующих им функциональных зависимостях. 
+НФ Бойса-Кодда: Все детерминанты функциональных зависимостей отношений являются потенциальными ключами. Т.е. по: {avatar_id}; {user_id, board_id}; {board_id, position}, {list_id, position}; {card_id, board_member_id}; {checklist_id, position} можно однозначно определить атрибуты справа в соотвествующих им функциональных зависимостях. 
