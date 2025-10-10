@@ -25,8 +25,8 @@
 ## card
 Хранит данные о карточке с заданием: id создателя карточки - участника доски, id списка, текст на карточке, позицию в списке по счету, даты создания и обновления, дату дедлайна.
 ### Зависимости:
-{id} -> {author_board_member_id, list_id, content, position, created_at, updated_at, completed_before} <br>
-{list_id, position} -> {id, author_board_member_id, content, created_at, updated_at, completed_before} 
+{id} -> {author_board_member_id, list_id, content, position, created_at, updated_at, complete_before} <br>
+{list_id, position} -> {id, author_board_member_id, content, created_at, updated_at, complete_before} 
 
 ## card_member
 Хранит данные о связи между карточкой с задачей и участниками доски, занимающейся этой задачей(прикрепленных к ней): id карточки и участника доски, даты создания и обновления.

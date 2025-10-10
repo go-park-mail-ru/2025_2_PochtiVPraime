@@ -4,8 +4,8 @@
 		bigint id PK 
 		text username  
 		text email   
-		bytes password 
-        bigint avatar_file_id  
+		bytea password 
+        bigint avatar_id FK 
         timestamptz created_at
         timestamptz updated_at
 	}
