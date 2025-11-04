@@ -1,17 +1,45 @@
 package repository
 
-import "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+import (
+	"context"
+
+	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+)
+
+//go:generate mockgen -source=repository.go -destination=mock/repository.go
 
 type UserRepository interface {
-	SaveUser(user models.User) error
-	Authorizate(email string, password string) (user models.User)
-	FindByID(id int) (models.User, error)
-	GetUserBoard(userId int)
-	UpdateUser(newUser models.User) (models.User, error)
+	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
+	GetUserByID(ctx context.Context, id int64) (*models.User, error)
+	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
+	UpdateUser(ctx context.Context, user *models.User) (*models.User, error)
+	DeleteUser(ctx context.Context, id int64) error
 }
 
 type BoardsRepository interface {
-	AddBoard(board models.Board) error
-	GetBoardById(id int) ([](models.Board), error)
-	UpdateBoard(newBoard models.Board) (models.Board, error)
+	CreateBoard(ctx context.Context, board *models.Board) (*models.Board, error)
+	GetBoardById(ctx context.Context, id int64) (*models.Board, error)
+	GetBoardsByOwner(ctx context.Context, ownerID int64) ([]*models.Board, error)
+	UpdateBoard(ctx context.Context, board *models.Board) (*models.Board, error)
+	ArchiveBoard(ctx context.Context, id int64) error
+	RestoreBoard(ctx context.Context, id int64) error
+	DeleteBoard(ctx context.Context, id int64) error
+}
+
+type ListsRepository interface {
+	SaveList(ctx context.Context, list *models.List) (*models.List, error)
+	GetListByID(ctx context.Context, id int64) (*models.List, error)
+	GetListsByBoardID(ctx context.Context, id int64) ([]*models.List, error)
+	UpdateList(ctx context.Context, list *models.List) (*models.List, error)
+	DeleteList(ctx context.Context, id int64) error
+}
+
+type CardsRepository interface {
+	CreateCard(ctx context.Context, card *models.Card) (*models.Card, error)
+	GetCard(ctx context.Context, id int64) (*models.Card, error)
+	GetCardsByList(ctx context.Context, listID int64) ([]*models.Card, error)
+	UpdateCard(ctx context.Context, card *models.Card) (*models.Card, error)
+	DeleteCard(ctx context.Context, id int64) error
+	UpdateCardPosition(ctx context.Context, cardID int64, newPosition int, newListID int64) error
+	GetCardsByBoardMember(ctx context.Context, boardMemberID int64) ([]*models.Card, error)
 }

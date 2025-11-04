@@ -3,30 +3,44 @@ package main
 import (
 	"net/http"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 
+	repository "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/Repository"
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/handlers"
+	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/services"
 )
 
 func main() {
 
 	mux := http.NewServeMux()
-	/*
-		db, err := sql.Open("sqlite3", "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/database/SQLite/store.db")
-		if err != nil {
-			panic(err)
-		}
-		defer db.Close()
-	*/
-	h := handlers.NewHandler()
-	mux.HandleFunc("/api/auth/register", h.Register)
-	mux.HandleFunc("/api/auth/login", h.Login)
-	mux.HandleFunc("/api/auth/me", h.Me)
-	mux.HandleFunc("/api/boards", h.GetBoards)
-	mux.HandleFunc("/api/auth/logout", h.Logout)
-	mux.HandleFunc("/api/boards/{id}", h.BoardDelete)
-	mux.HandleFunc("/api/boards/{boardId}/restore", h.BoardRestore)
+	connStr := "host=127.0.0.1 port=54320 user=user password=password dbname=TaskflowDB sslmode=disable"
+	conn, err := sqlx.Connect("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
+	//repository
+	ur := repository.NewUserRepoImpl(conn)
+	br := repository.NewBoardRepoImpl(conn)
+
+	//services
+	as := services.NewAuthService(&ur)
+	bs := services.NewBoardService(&br)
+
+	//handlers
+	ah := handlers.NewAuthHandler(as)
+	bh := handlers.NewBoardHandler(bs, as)
+
+	mux.HandleFunc("/api/auth/register", ah.Register)
+	mux.HandleFunc("/api/auth/login", ah.Login)
+	mux.HandleFunc("/api/auth/me", ah.Me)
+	mux.HandleFunc("/api/boards", bh.GetBoards)
+	mux.HandleFunc("/api/auth/logout", ah.Logout)
+	mux.HandleFunc("/api/boards/{id}", bh.BoardDelete)
+	mux.HandleFunc("/api/boards/{boardId}/restore", bh.BoardRestore)
 
 	// Настройка CORS с помощью библиотеки
 	c := cors.New(cors.Options{

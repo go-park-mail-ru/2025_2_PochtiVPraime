@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS card (
     content TEXT CHECK (char_length(content) < 5000),
     position INTEGER CHECK (position > 0),
     UNIQUE (list_id, position),
+    completed  BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     complete_before TIMESTAMPTZ,
