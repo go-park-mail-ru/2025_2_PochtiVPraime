@@ -15,7 +15,7 @@ type ListRepoImpl struct {
 	DB *sqlx.DB
 }
 
-func NewListRepository(db *sqlx.DB) ListsRepository {
+func NewListRepoImpl(db *sqlx.DB) ListsRepository {
 	return &ListRepoImpl{
 		DB: db,
 	}

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -37,7 +36,7 @@ func NewBoardHandler(boardService *services.BoardService, authService *services.
 // --TODO: Если токен валиден — получить доски через h.BoardService.GetBoards()
 // --TODO: Вернуть 200 с JSON: { "user": { "id", "email", "username" }, "boards": [...] }
 func (bh *BoardHandler) GetBoards(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	log.Println("GetBoard")
 	switch r.Method {
 	case http.MethodPost:
@@ -92,7 +91,7 @@ func (bh *BoardHandler) GetBoards(w http.ResponseWriter, r *http.Request) {
 }
 
 func (bh *BoardHandler) BoardDelete(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	vars, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	err := bh.BoardService.DeleteBoard(ctx, vars)
 	if err != nil {
@@ -105,7 +104,7 @@ func (bh *BoardHandler) BoardDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (bh *BoardHandler) BoardRestore(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	vars, _ := strconv.ParseInt(r.PathValue("boardId"), 10, 64)
 	err := bh.BoardService.RestoreBoard(ctx, vars)
 	if err != nil {
@@ -114,4 +113,28 @@ func (bh *BoardHandler) BoardRestore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (bh *BoardHandler) GetBoard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	boardID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid board_id", http.StatusBadRequest)
+		return
+	}
+
+	// Получаем полные данные доски
+	fullBoard, err := bh.BoardService.GetBoard(ctx, boardID)
+	if err != nil {
+		http.Error(w, "failed to get board data", http.StatusInternalServerError)
+		return
+	}
+
+	// Возвращаем JSON ответ
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(fullBoard); err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

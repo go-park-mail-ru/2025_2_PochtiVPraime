@@ -7,8 +7,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 
-	repository "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/Repository"
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/handlers"
+	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/repository"
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/services"
 )
 
@@ -25,10 +25,12 @@ func main() {
 	//repository
 	ur := repository.NewUserRepoImpl(conn)
 	br := repository.NewBoardRepoImpl(conn)
+	lr := repository.NewListRepoImpl(conn)
+	cr := repository.NewCardRepoImpl(conn)
 
 	//services
-	as := services.NewAuthService(&ur)
-	bs := services.NewBoardService(&br)
+	as := services.NewAuthService(ur)
+	bs := services.NewBoardService(br, lr, cr, ur)
 
 	//handlers
 	ah := handlers.NewAuthHandler(as)
@@ -41,6 +43,9 @@ func main() {
 	mux.HandleFunc("/api/auth/logout", ah.Logout)
 	mux.HandleFunc("/api/boards/{id}", bh.BoardDelete)
 	mux.HandleFunc("/api/boards/{boardId}/restore", bh.BoardRestore)
+	//mux.HandleFunc("/api/boards/{boardId}", bh.)
+	//mux.HandleFunc("/api/boards/{boardId}/restore", bh.BoardRestore)
+	//mux.HandleFunc("/api/boards/{boardId}/restore", bh.BoardRestore)
 
 	// Настройка CORS с помощью библиотеки
 	c := cors.New(cors.Options{

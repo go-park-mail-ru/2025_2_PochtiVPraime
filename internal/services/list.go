@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
-	repository "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/Repository"
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/repository"
 )
 
 // ListService — сервис для работы со списками карточек
@@ -71,26 +72,41 @@ func (ls *ListService) CreateList(ctx context.Context, title string, boardId int
 }
 
 // GetLists - получаем списки карточек по id доски
-func (ls *ListService) GetLists(ctx context.Context, boardId int64) ([]*models.List, error) {
-	/*
-		// Проверяем права доступа к доске
-		board, err := ls.BoardRepository.GetBoardById(ctx, boardId)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get board: %w", err)
-		}
-
-			if board.OwnerID != userID {
-				return nil, ErrListAccessDenied
-			}
-	*/
-
-	// Получаем списки доски
+func (ls *ListService) GetLists(ctx context.Context, boardId int64) ([]models.ListData, error) {
+	// Получаем все списки для этой доски
 	lists, err := ls.ListRepository.GetListsByBoardID(ctx, boardId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get board lists: %w", err)
+		log.Printf("Error getting lists for board %d: %v", boardId, err)
+		return nil, err
 	}
 
-	return lists, nil
+	// 3. Для каждого списка получаем карточки
+	listData := make([]models.ListData, 0, len(lists))
+	for _, list := range lists {
+		cards, err := ls.CardsRepository.GetCardsByList(ctx, list.ID)
+		if err != nil {
+			log.Printf("Error getting cards for list %d: %v", list.ID, err)
+			continue // Продолжаем обработку других списков
+		}
+
+		// 4. Преобразуем карточки в CardData
+		cardData := make([]models.CardData, 0, len(cards))
+		for _, card := range cards {
+			cardData = append(cardData, models.CardData{
+				ID:        card.ID,
+				Content:   card.Content,
+				Completed: card.Completed,
+			})
+		}
+
+		// 5. Создаем ListData
+		listData = append(listData, models.ListData{
+			ID:    list.ID,
+			Title: list.Title,
+			Tasks: cardData,
+		})
+	}
+	return listData, nil
 }
 
 // UpdateList - изменяет карточку и возвращает обновленную версию

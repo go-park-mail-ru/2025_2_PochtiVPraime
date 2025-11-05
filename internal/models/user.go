@@ -8,7 +8,7 @@ type User struct {
 	Email     string    `json:"email"`
 	Username  string    `json:"username"`
 	Password  string    `json:"password,omitempty"` // TODO: Добавить поле Password (но не отправлять в ответе через json:"-")
-	AvatarID  int64     `json:"avatar_id"`
+	AvatarID  int64     `json:"avatar_id,omitempty"`
 	CreatedAt time.Time `json:"created_at"` //? TODO: Добавить CreatedAt для регистрации
 	UpdatedAt time.Time `json:"updated_at"` //? TODO: Добавить UpdatedAt для изменений
 }

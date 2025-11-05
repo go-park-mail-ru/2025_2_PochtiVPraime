@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	repository "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/Repository"
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/repository"
 )
 
 // CardService — сервис для работы с карточками

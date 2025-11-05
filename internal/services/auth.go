@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	repository "github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/Repository"
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -27,14 +27,12 @@ type AuthService struct {
 	// Поля будут добавлены позже пока пусто
 }
 
-var currentUser models.User
-
 // NewAuthService — конструктор для Dependency Injection
 // TODO: В будущем принимать db, logger, hasher
 // Сейчас — просто возвращаем пустой сервис
-func NewAuthService(userRepo *repository.UserRepository) *AuthService {
+func NewAuthService(userRepo repository.UserRepository) *AuthService {
 	return &AuthService{
-		UserRepository: *userRepo,
+		UserRepository: userRepo,
 	}
 }
 
@@ -130,7 +128,7 @@ func (as *AuthService) Login(ctx context.Context, user *models.User) (string, er
 		return "", errors.New("Неправильный пароль")
 	}
 	claims := jwt.MapClaims{
-		"userId": user.ID,
+		"userId": localUser.ID,
 		"exp":    time.Now().Add(time.Hour * 24).Unix(), // Срок действия — 24 часа
 	}
 
@@ -185,13 +183,15 @@ func (as *AuthService) GetUserFromToken(ctx context.Context, tokenString string)
 	}
 
 	var user *models.User
-	currentId, ok := id.(int64)
+	currentId, ok := id.(float64)
+	log.Println(id)
 	if !ok {
 		log.Println("не смог привести user_id к int")
 		return nil, errors.New("не смог привести user_id к int")
 	}
-
-	user, err = as.UserRepository.GetUserByID(ctx, currentId)
+	newId := int64(currentId)
+	log.Println(newId)
+	user, err = as.UserRepository.GetUserByID(ctx, newId)
 	log.Println(user)
 	return user, nil
 }

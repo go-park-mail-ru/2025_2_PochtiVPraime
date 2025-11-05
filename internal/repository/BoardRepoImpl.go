@@ -45,7 +45,7 @@ func (br *BoardRepoImpl) CreateBoard(ctx context.Context, board *models.Board) (
 
 func (br *BoardRepoImpl) GetBoardById(ctx context.Context, id int64) (*models.Board, error) {
 	query := `
-		SELECT id, owner_id, title, image, archived, created_at
+		SELECT id, owner_id, title, archived, created_at
 		FROM board
 		WHERE id = $1 AND archived = false
 	`
@@ -55,7 +55,7 @@ func (br *BoardRepoImpl) GetBoardById(ctx context.Context, id int64) (*models.Bo
 		&board.ID,
 		&board.OwnerId,
 		&board.Title,
-		&board.Image,
+		//&board.Image,
 		&board.Archived,
 		&board.CreatedAt,
 	)
@@ -72,9 +72,9 @@ func (br *BoardRepoImpl) GetBoardById(ctx context.Context, id int64) (*models.Bo
 
 func (br *BoardRepoImpl) GetBoardsByOwner(ctx context.Context, ownerID int64) ([]*models.Board, error) {
 	query := `
-		SELECT id, owner_id, title, image, archived, created_at
+		SELECT id, owner_user_id, title, archived, created_at, updated_at
 		FROM board
-		WHERE owner_id = $1 AND archived = false
+		WHERE owner_user_id = $1 AND archived = false
 		ORDER BY created_at DESC
 	`
 
@@ -91,9 +91,10 @@ func (br *BoardRepoImpl) GetBoardsByOwner(ctx context.Context, ownerID int64) ([
 			&board.ID,
 			&board.OwnerId,
 			&board.Title,
-			&board.Image,
+			//&board.Image,
 			&board.Archived,
 			&board.CreatedAt,
+			&board.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan board: %w", err)
@@ -111,8 +112,8 @@ func (br *BoardRepoImpl) GetBoardsByOwner(ctx context.Context, ownerID int64) ([
 func (br *BoardRepoImpl) UpdateBoard(ctx context.Context, board *models.Board) (*models.Board, error) {
 	query := `
 		UPDATE board
-		SET title = $1, image = $2, archived = $3
-		WHERE id = $4 AND owner_id = $5
+		SET title = $1, image_id = $2, archived = $3
+		WHERE id = $4 AND owner_user_id = $5
 		RETURNING created_at
 	`
 
@@ -184,7 +185,7 @@ func (r *BoardRepoImpl) RestoreBoard(ctx context.Context, id int64) error {
 }
 
 func (r *BoardRepoImpl) DeleteBoard(ctx context.Context, id int64) error {
-	query := `DELETE FROM boards WHERE id = $1`
+	query := `DELETE FROM board WHERE id = $1`
 
 	result, err := r.DB.ExecContext(ctx, query, id)
 	if err != nil {

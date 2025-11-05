@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
@@ -61,7 +62,7 @@ func (ur *UserRepoImpl) CreateUser(ctx context.Context, user *models.User) (*mod
 // GetUserByID возвращает пользователя по ID
 func (ur *UserRepoImpl) GetUserByID(ctx context.Context, id int64) (*models.User, error) {
 	query := `
-		SELECT id, email, username, password, avatar_id, created_at, updated_at
+		SELECT id, email, username, password, created_at, updated_at
 		FROM "user"
 		WHERE id = $1
 	`
@@ -72,11 +73,12 @@ func (ur *UserRepoImpl) GetUserByID(ctx context.Context, id int64) (*models.User
 		&user.Email,
 		&user.Username,
 		&user.Password,
-		&user.AvatarID,
+		//&user.AvatarID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
 
+	log.Println(user)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("user not found")
@@ -89,7 +91,7 @@ func (ur *UserRepoImpl) GetUserByID(ctx context.Context, id int64) (*models.User
 
 func (ur *UserRepoImpl) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	query := `
-		SELECT id, email, username, password, avatar_id, created_at, updated_at
+		SELECT id, email, username, password, created_at, updated_at
 		FROM "user"
 		WHERE username = $1
 	`
@@ -100,7 +102,7 @@ func (ur *UserRepoImpl) GetUserByUsername(ctx context.Context, username string) 
 		&user.Email,
 		&user.Username,
 		&user.Password,
-		&user.AvatarID,
+		//&user.AvatarID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)

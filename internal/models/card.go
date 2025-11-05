@@ -14,3 +14,9 @@ type Card struct {
 	UpdatedAt           time.Time `json:"updated_at"` //?
 	CompleteBefore      time.Time `json:"complete_before"`
 }
+
+type CardData struct {
+	ID        int64  `json:"id"`
+	Content   string `json:"text"`
+	Completed bool   `json:"isCompleted"`
+}
