@@ -20,11 +20,11 @@ type ListService struct {
 }
 
 // NewListService — конструктор (нужен для Dependency Injection) поботать эту тему ещё
-func NewListService(listRepository *repository.ListsRepository, boardRepository *repository.BoardsRepository, cardRepository *repository.CardsRepository) *ListService {
+func NewListService(listRepository repository.ListsRepository, boardRepository repository.BoardsRepository, cardRepository repository.CardsRepository) *ListService {
 	return &ListService{
-		ListRepository:  *listRepository,
-		BoardRepository: *boardRepository,
-		CardsRepository: *cardRepository,
+		ListRepository:  listRepository,
+		BoardRepository: boardRepository,
+		CardsRepository: cardRepository,
 	}
 }
 
@@ -32,15 +32,17 @@ func NewListService(listRepository *repository.ListsRepository, boardRepository 
 func (ls *ListService) CreateList(ctx context.Context, title string, boardId int64, userId int64) (*models.List, error) {
 	// Проверяем существование доски
 	board, err := ls.BoardRepository.GetBoardById(ctx, boardId)
+	_ = board
 	if err != nil {
 		return nil, fmt.Errorf("failed to get board: %w", err)
 	}
 
-	// Проверяем, что пользователь является владельцем доски
-	if board.OwnerId != userId {
-		return nil, fmt.Errorf("user not owner of board: %w", err)
-	}
-
+	/*
+		// Проверяем, что пользователь является владельцем доски
+		if board.OwnerId != userId {
+			return nil, fmt.Errorf("user not owner of board: %w", err)
+		}
+	*/
 	// Получаем текущие списки доски для определения позиции
 	existingLists, err := ls.ListRepository.GetListsByBoardID(ctx, boardId)
 	if err != nil {
@@ -117,18 +119,19 @@ func (ls *ListService) UpdateList(ctx context.Context, newList *models.List, use
 		return nil, fmt.Errorf("failed to get list: %w", err)
 	}
 
-	// Получаем доску
-	board, err := ls.BoardRepository.GetBoardById(ctx, newList.BoardId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get board: %w", err)
-	}
+	/*
+		// Получаем доску
+		board, err := ls.BoardRepository.GetBoardById(ctx, newList.BoardId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get board: %w", err)
+		}
 
-	if board.OwnerId != userId {
-		return nil, errors.New("access denied to board")
-	}
-
+		if board.OwnerId != userId {
+			return nil, errors.New("access denied to board")
+		}
+	*/
 	list.UpdatedAt = time.Now()
-
+	list.Title = newList.Title
 	// Сохраняем изменения
 	updatedList, err := ls.ListRepository.UpdateList(ctx, list)
 	if err != nil {
@@ -163,4 +166,34 @@ func (ls *ListService) DeleteListWithCard(ctx context.Context, listId int64, use
 	}
 
 	return nil
+}
+
+func (ls *ListService) GetList(ctx context.Context, listId int64) (*models.ListData, error) {
+	// Для списка получаем карточки
+	list, err := ls.ListRepository.GetListByID(ctx, listId)
+	if err != nil {
+		log.Printf("Error getting list for listId %d: %v", listId, err)
+		return nil, err
+	}
+	cards, err := ls.CardsRepository.GetCardsByList(ctx, list.ID)
+	if err != nil {
+		log.Printf("Error getting cards for list %d: %v", list.ID, err)
+		return nil, err
+	}
+
+	// Преобразуем карточки в CardData
+	cardData := make([]models.CardData, 0, len(cards))
+	for _, card := range cards {
+		cardData = append(cardData, models.CardData{
+			ID:        card.ID,
+			Content:   card.Content,
+			Completed: card.Completed,
+		})
+	}
+	listData := &models.ListData{
+		ID:    list.ID,
+		Title: list.Title,
+		Tasks: cardData,
+	}
+	return listData, nil
 }

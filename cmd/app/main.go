@@ -31,21 +31,27 @@ func main() {
 	//services
 	as := services.NewAuthService(ur)
 	bs := services.NewBoardService(br, lr, cr, ur)
+	ls := services.NewListService(lr, br, cr)
+	cs := services.NewCardService(cr, lr, br)
 
 	//handlers
 	ah := handlers.NewAuthHandler(as)
 	bh := handlers.NewBoardHandler(bs, as)
+	lh := handlers.NewListHandler(ls, as)
+	ch := handlers.NewCardHandler(cs, as)
 
 	mux.HandleFunc("/api/auth/register", ah.Register)
 	mux.HandleFunc("/api/auth/login", ah.Login)
 	mux.HandleFunc("/api/auth/me", ah.Me)
-	mux.HandleFunc("/api/boards", bh.GetBoards)
 	mux.HandleFunc("/api/auth/logout", ah.Logout)
-	mux.HandleFunc("/api/boards/{id}", bh.BoardDelete)
+	mux.HandleFunc("/api/boards", bh.CreateOrGetBoards)
+	mux.HandleFunc("/api/boards/{boardId}", bh.Board)
 	mux.HandleFunc("/api/boards/{boardId}/restore", bh.BoardRestore)
-	//mux.HandleFunc("/api/boards/{boardId}", bh.)
-	//mux.HandleFunc("/api/boards/{boardId}/restore", bh.BoardRestore)
-	//mux.HandleFunc("/api/boards/{boardId}/restore", bh.BoardRestore)
+	mux.HandleFunc("/api/boards/{boardId}/close", bh.ArchivedBoard)
+	mux.HandleFunc("/api/board/{boardId}/lists", lh.CreateOrGetLists)
+	mux.HandleFunc("/api/board/{boardId}/lists/{listId}", lh.List)
+	mux.HandleFunc("/api/board/{boardId}/list/{listId}/tasks", ch.CreateOrGetCards)
+	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}", ch.Card)
 
 	// Настройка CORS с помощью библиотеки
 	c := cors.New(cors.Options{

@@ -19,10 +19,10 @@ type ListHandler struct {
 }
 
 // NewListHandler — конструктор для Dependency Injection
-func NewListHandler(listService services.ListService, authService services.AuthService) *ListHandler {
+func NewListHandler(listService *services.ListService, authService *services.AuthService) *ListHandler {
 	return &ListHandler{
-		ListService: listService,
-		AuthService: authService,
+		ListService: *listService,
+		AuthService: *authService,
 	}
 }
 
@@ -46,44 +46,39 @@ func (lh *ListHandler) GetUserFromRequest(ctx context.Context, r *http.Request) 
 func (lh *ListHandler) CreateList(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Получаем пользователя из токена
-	user, err := lh.GetUserFromRequest(ctx, r)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		log.Println("Authorization error:", err)
-		return
-	}
-
-	// Парсим тело запроса
-	var requestData struct {
-		Title   string `json:"title"`
-		BoardID int64  `json:"boardId"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+	/*
+		// Получаем пользователя из токена
+		user, err := lh.GetUserFromRequest(ctx, r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			log.Println("Authorization error:", err)
+			return
+		}
+	*/
+	var list models.List
+	if err := json.NewDecoder(r.Body).Decode(&list); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		log.Printf("Error decoding JSON: %s", err)
 		return
 	}
 
+	// Извлекаем boardId из query параметров
+	boardID, err := strconv.ParseInt(r.PathValue("boardId"), 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid BoardID", http.StatusBadRequest)
+		return
+	}
+
 	// Валидация данных
-	if requestData.Title == "" {
+	if list.Title == "" {
 		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
 
-	if requestData.BoardID == 0 {
-		http.Error(w, "BoardID is required", http.StatusBadRequest)
-		return
-	}
-
+	list.BoardId = boardID
+	zaglushka := 12 //поменять, когда разберусь почему не видет куки
 	// Создаем список через сервис
-	list, err := lh.ListService.CreateList(ctx, requestData.Title, requestData.BoardID, user.ID)
+	newList, err := lh.ListService.CreateList(ctx, list.Title, list.BoardId, int64(zaglushka))
 	if err != nil {
 		log.Printf("Error creating list: %s", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -93,7 +88,7 @@ func (lh *ListHandler) CreateList(w http.ResponseWriter, r *http.Request) {
 	// Возвращаем созданный список
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(list); err != nil {
+	if err := json.NewEncoder(w).Encode(newList); err != nil {
 		log.Printf("Error encoding response: %s", err)
 	}
 }
@@ -102,30 +97,8 @@ func (lh *ListHandler) CreateList(w http.ResponseWriter, r *http.Request) {
 func (lh *ListHandler) GetLists(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	// Извлекаем boardId из query параметров
-	boardIDStr := r.URL.Query().Get("boardId")
-	if boardIDStr == "" {
-		// Пробуем извлечь из path (если используется роутинг типа /boards/{id}/lists)
-		pathParts := strings.Split(r.URL.Path, "/")
-		for i, part := range pathParts {
-			if part == "boards" && i+1 < len(pathParts) {
-				boardIDStr = pathParts[i+1]
-				break
-			}
-		}
-	}
-
-	if boardIDStr == "" {
-		http.Error(w, "BoardID is required", http.StatusBadRequest)
-		return
-	}
-
-	boardID, err := strconv.ParseInt(boardIDStr, 10, 64)
+	boardID, err := strconv.ParseInt(r.PathValue("boardId"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid BoardID", http.StatusBadRequest)
 		return
@@ -146,14 +119,9 @@ func (lh *ListHandler) GetLists(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// UpdateList обрабатывает PUT /api/lists/{listId}
+// UpdateList обрабатывает PUT /board/{boardId}/lists/{listId}
 func (lh *ListHandler) UpdateList(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-
-	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 
 	// Получаем пользователя из токена
 	user, err := lh.GetUserFromRequest(ctx, r)
@@ -163,22 +131,7 @@ func (lh *ListHandler) UpdateList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Извлекаем listId из URL
-	pathParts := strings.Split(r.URL.Path, "/")
-	var listIDStr string
-	for i, part := range pathParts {
-		if part == "lists" && i+1 < len(pathParts) {
-			listIDStr = pathParts[i+1]
-			break
-		}
-	}
-
-	if listIDStr == "" {
-		http.Error(w, "ListID is required", http.StatusBadRequest)
-		return
-	}
-
-	listID, err := strconv.ParseInt(listIDStr, 10, 64)
+	listID, err := strconv.ParseInt(r.PathValue("listId"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid ListID", http.StatusBadRequest)
 		return
@@ -217,14 +170,33 @@ func (lh *ListHandler) UpdateList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetList получаем список по Id GET /api/lists/{listId}
+func (lh *ListHandler) GetList(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// Извлекаем boardId из query параметров
+	listID, err := strconv.ParseInt(r.PathValue("listId"), 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid listID", http.StatusBadRequest)
+		return
+	}
+	list, err := lh.ListService.GetList(ctx, listID)
+	if err != nil {
+		http.Error(w, "failed to get list", http.StatusInternalServerError)
+		return
+	}
+
+	// Возвращаем JSON ответ
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(list); err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		return
+	}
+
+}
+
 // DeleteList обрабатывает DELETE /api/lists/{listId}
 func (lh *ListHandler) DeleteList(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
 
 	// Получаем пользователя из токена
 	user, err := lh.GetUserFromRequest(ctx, r)
@@ -234,22 +206,7 @@ func (lh *ListHandler) DeleteList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Извлекаем listId из URL
-	pathParts := strings.Split(r.URL.Path, "/")
-	var listIDStr string
-	for i, part := range pathParts {
-		if part == "lists" && i+1 < len(pathParts) {
-			listIDStr = pathParts[i+1]
-			break
-		}
-	}
-
-	if listIDStr == "" {
-		http.Error(w, "ListID is required", http.StatusBadRequest)
-		return
-	}
-
-	listID, err := strconv.ParseInt(listIDStr, 10, 64)
+	listID, err := strconv.ParseInt(r.PathValue("listId"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid ListID", http.StatusBadRequest)
 		return
@@ -265,4 +222,30 @@ func (lh *ListHandler) DeleteList(w http.ResponseWriter, r *http.Request) {
 
 	// Возвращаем успешный статус
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (lh *ListHandler) List(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		lh.GetList(w, r)
+	case http.MethodDelete:
+		lh.DeleteList(w, r)
+	case http.MethodPut:
+		lh.UpdateList(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (lh *ListHandler) CreateOrGetLists(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		lh.GetLists(w, r)
+	case http.MethodPost:
+		lh.CreateList(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 }

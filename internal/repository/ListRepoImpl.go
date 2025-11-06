@@ -24,7 +24,7 @@ func NewListRepoImpl(db *sqlx.DB) ListsRepository {
 // Сохраняет новый список
 func (lr *ListRepoImpl) SaveList(ctx context.Context, list *models.List) (*models.List, error) {
 	query := `
-		INSERT INTO lists (board_id, title, position, created_at, updated_at)
+		INSERT INTO list (board_id, title, position, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at, updated_at
 	`
@@ -54,8 +54,8 @@ func (lr *ListRepoImpl) SaveList(ctx context.Context, list *models.List) (*model
 func (lr *ListRepoImpl) GetListByID(ctx context.Context, id int64) (*models.List, error) {
 	query := `
 		SELECT id, board_id, title, position, created_at, updated_at
-		FROM lists
-		WHERE id = $1 AND deleted_at IS NULL
+		FROM list
+		WHERE id = $1
 	`
 
 	var list models.List
@@ -82,8 +82,8 @@ func (lr *ListRepoImpl) GetListByID(ctx context.Context, id int64) (*models.List
 func (lr *ListRepoImpl) GetListsByBoardID(ctx context.Context, boardID int64) ([]*models.List, error) {
 	query := `
 		SELECT id, board_id, title, position, created_at, updated_at
-		FROM lists
-		WHERE board_id = $1 AND deleted_at IS NULL
+		FROM list
+		WHERE board_id = $1 
 		ORDER BY position ASC, created_at ASC
 	`
 
@@ -120,9 +120,9 @@ func (lr *ListRepoImpl) GetListsByBoardID(ctx context.Context, boardID int64) ([
 // Update обновляет существующий список
 func (lr *ListRepoImpl) UpdateList(ctx context.Context, list *models.List) (*models.List, error) {
 	query := `
-		UPDATE lists
+		UPDATE list
 		SET title = $1, position = $2, updated_at = $3
-		WHERE id = $4 AND deleted_at IS NULL
+		WHERE id = $4 
 		RETURNING updated_at
 	`
 
@@ -149,7 +149,7 @@ func (lr *ListRepoImpl) UpdateList(ctx context.Context, list *models.List) (*mod
 
 // Delete удаляет список (мягкое удаление)
 func (lr *ListRepoImpl) DeleteList(ctx context.Context, id int64) error {
-	query := `DELETE FROM boards WHERE id = $1`
+	query := `DELETE FROM board WHERE id = $1`
 
 	result, err := lr.DB.ExecContext(ctx, query, time.Now(), id)
 	if err != nil {

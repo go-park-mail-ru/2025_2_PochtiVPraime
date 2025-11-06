@@ -16,10 +16,10 @@ type CardHandler struct {
 	AuthService services.AuthService
 }
 
-func NewCardHandler(cardService services.CardService, authService services.AuthService) *CardHandler {
+func NewCardHandler(cardService *services.CardService, authService *services.AuthService) *CardHandler {
 	return &CardHandler{
-		CardService: cardService,
-		AuthService: authService,
+		CardService: *cardService,
+		AuthService: *authService,
 	}
 }
 
@@ -38,16 +38,13 @@ func (ch *CardHandler) GetUserFromRequest(ctx context.Context, r *http.Request) 
 func (ch *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	user, err := ch.GetUserFromRequest(ctx, r)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	/*
+		user, err := ch.GetUserFromRequest(ctx, r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+	*/
 
 	// Получаем listID из URL параметров
 	listId, err := strconv.ParseInt(r.PathValue("listId"), 10, 64)
@@ -65,7 +62,8 @@ func (ch *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Устанавливаем создателя карточки
-	newCard.AuthorBoardMemberId = user.ID //реализовано пока так, тк нет реализации board_member
+	zaglushka := 1
+	newCard.AuthorBoardMemberId = int64(zaglushka) //реализовано пока так, тк нет реализации board_member
 
 	createdCard, err := ch.CardService.CreateCard(ctx, newCard, listId)
 	if err != nil {
@@ -96,7 +94,6 @@ func (ch *CardHandler) GetCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//cardIDStr := chi.URLParam(r, "cardID")
 	cardID, err := strconv.ParseInt(r.PathValue("taskId"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid card ID", http.StatusBadRequest)
@@ -125,7 +122,6 @@ func (ch *CardHandler) GetListCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//listIDStr := chi.URLParam(r, "listID")
 	listID, err := strconv.ParseInt(r.PathValue("listId"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid list ID", http.StatusBadRequest)
@@ -160,7 +156,6 @@ func (ch *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//cardIDStr := chi.URLParam(r, "cardID")
 	cardID, err := strconv.ParseInt(r.PathValue("taskId"), 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid card ID", http.StatusBadRequest)
@@ -174,30 +169,26 @@ func (ch *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	// Убеждаемся, что обновляется правильная карточка
-	card.ID = cardID
+	//log.Println(card)
 
 	// Проверяем, что пользователь имеет доступ к карточке
-	existingCard, err := ch.CardService.GetCard(ctx, cardID, user.ID)
+	_, err = ch.CardService.GetCard(ctx, cardID, user.ID)
 	if err != nil {
 		http.Error(w, "Card not found", http.StatusNotFound)
 		return
 	}
 
-	// Сохраняем неизменяемые поля
-	card.AuthorBoardMemberId = existingCard.AuthorBoardMemberId
-	card.ListId = existingCard.ListId
-
-	updatedCard, err := ch.CardService.UpdateCard(ctx, card)
+	updatedCard, err := ch.CardService.UpdateCard(ctx, card, cardID)
+	_ = updatedCard
 	if err != nil {
 		log.Printf("Error updating card: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
+	card.ID = cardID
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(updatedCard); err != nil {
+	if err := json.NewEncoder(w).Encode(card); err != nil {
 		log.Printf("Error encoding response: %v", err)
 	}
 }
@@ -237,4 +228,27 @@ func (ch *CardHandler) DeleteCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (ch *CardHandler) Card(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		ch.GetCard(w, r)
+	case http.MethodDelete:
+		ch.DeleteCard(w, r)
+	case http.MethodPut:
+		ch.UpdateCard(w, r)
+	}
+}
+
+func (ch *CardHandler) CreateOrGetCards(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		ch.GetListCards(w, r)
+	case http.MethodPost:
+		ch.CreateCard(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 }

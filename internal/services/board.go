@@ -60,9 +60,11 @@ func (bs *BoardService) AddBoard(ctx context.Context, board *models.Board) error
 		return errors.New("Нет Title")
 	}
 	board.Archived = false
-	if currentUser.Email == "" {
-		return errors.New("Пользователь не авторизирован")
-	}
+	/*
+		if currentUser.Email == "" {
+			return errors.New("Пользователь не авторизирован")
+		}
+	*/
 	_, err := bs.BoardRepository.CreateBoard(ctx, board)
 	if err != nil {
 		return err
@@ -135,4 +137,23 @@ func (bs *BoardService) GetBoard(ctx context.Context, boardId int64) (*models.Fu
 	}
 
 	return fullBoard, nil
+}
+
+func (bs *BoardService) RenameBoard(ctx context.Context, newBoard *models.Board) (*models.Board, error) {
+	board, err := bs.BoardRepository.GetBoardById(ctx, newBoard.ID)
+	if err != nil {
+		log.Printf("Error getting board by id %d: %v", newBoard.ID, err)
+		return nil, err
+	}
+	board.Title = newBoard.Title
+	board, err = bs.BoardRepository.UpdateBoard(ctx, board)
+	if err != nil {
+		log.Printf("Error updating board by id %d: %v", newBoard.ID, err)
+		return nil, err
+	}
+	return board, nil
+}
+
+func (bs *BoardService) ArchivedBoard(ctx context.Context, boardId int64) error {
+	return bs.BoardRepository.ArchiveBoard(ctx, boardId)
 }

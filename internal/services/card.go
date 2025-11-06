@@ -50,9 +50,13 @@ func (cs *CardService) CreateCard(ctx context.Context, rawCard *models.Card, lis
 		position = existingCards[len(existingCards)-1].Position + 1
 	}
 
+	if rawCard.CompleteBefore.Before(time.Now()) {
+		rawCard.CompleteBefore = time.Now()
+	}
+
 	card := &models.Card{
 		AuthorBoardMemberId: rawCard.AuthorBoardMemberId,
-		ListId:              rawCard.ListId,
+		ListId:              listId,
 		Content:             rawCard.Content,
 		Position:            position,
 		CompleteBefore:      rawCard.CompleteBefore,
@@ -103,15 +107,25 @@ func (cs *CardService) GetListCards(ctx context.Context, listID int64) ([]*model
 }
 
 // UpdateCard обновляет карточку
-func (cs *CardService) UpdateCard(ctx context.Context, card *models.Card) (*models.Card, error) {
+func (cs *CardService) UpdateCard(ctx context.Context, card *models.Card, cardId int64) (*models.Card, error) {
 	if len(card.Content) < 1 || len(card.Content) > 1000 {
 		return nil, errors.New("Invalid size of content")
 	}
+	existingCard, err := cs.CardRepository.GetCard(ctx, cardId)
+	if card.Content != "" {
+		existingCard.Content = card.Content
+	}
+	if card.Completed != false {
+		existingCard.Completed = card.Completed
+	}
+	if card.CompleteBefore.After(time.Now()) {
+		existingCard.CompleteBefore = card.CompleteBefore
+	}
 
-	card.UpdatedAt = time.Now()
+	existingCard.UpdatedAt = time.Now()
 
 	// Сохраняем изменения
-	updatedCard, err := cs.CardRepository.UpdateCard(ctx, card)
+	updatedCard, err := cs.CardRepository.UpdateCard(ctx, existingCard)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update card: %w", err)
 	}

@@ -22,7 +22,7 @@ func NewBoardRepoImpl(db *sqlx.DB) BoardsRepository {
 
 func (br *BoardRepoImpl) CreateBoard(ctx context.Context, board *models.Board) (*models.Board, error) {
 	query := `
-		INSERT INTO board (owner_id, title, image, archived, created_at)
+		INSERT INTO board (owner_user_id, title, image, archived, created_at)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at
 	`
@@ -45,9 +45,9 @@ func (br *BoardRepoImpl) CreateBoard(ctx context.Context, board *models.Board) (
 
 func (br *BoardRepoImpl) GetBoardById(ctx context.Context, id int64) (*models.Board, error) {
 	query := `
-		SELECT id, owner_id, title, archived, created_at
+		SELECT id, owner_user_id, title, archived, created_at
 		FROM board
-		WHERE id = $1 AND archived = false
+		WHERE id = $1
 	`
 
 	var board models.Board
@@ -74,7 +74,7 @@ func (br *BoardRepoImpl) GetBoardsByOwner(ctx context.Context, ownerID int64) ([
 	query := `
 		SELECT id, owner_user_id, title, archived, created_at, updated_at
 		FROM board
-		WHERE owner_user_id = $1 AND archived = false
+		WHERE owner_user_id = $1
 		ORDER BY created_at DESC
 	`
 
@@ -112,15 +112,15 @@ func (br *BoardRepoImpl) GetBoardsByOwner(ctx context.Context, ownerID int64) ([
 func (br *BoardRepoImpl) UpdateBoard(ctx context.Context, board *models.Board) (*models.Board, error) {
 	query := `
 		UPDATE board
-		SET title = $1, image_id = $2, archived = $3
-		WHERE id = $4 AND owner_user_id = $5
+		SET title = $1, archived = $2
+		WHERE id = $3 AND owner_user_id = $4
 		RETURNING created_at
 	`
 
 	var createdAt time.Time
 	err := br.DB.QueryRowContext(ctx, query,
 		board.Title,
-		board.Image,
+		//board.Image,
 		board.Archived,
 		board.ID,
 		board.OwnerId,

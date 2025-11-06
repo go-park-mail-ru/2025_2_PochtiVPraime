@@ -24,7 +24,7 @@ func NewCardRepoImpl(db *sqlx.DB) CardsRepository {
 // CreateCard создает новую карточку
 func (cr *CardRepoImpl) CreateCard(ctx context.Context, card *models.Card) (*models.Card, error) {
 	query := `
-		INSERT INTO cards (
+		INSERT INTO card (
 			author_board_member_id, 
 			list_id, 
 			content, 
@@ -32,7 +32,7 @@ func (cr *CardRepoImpl) CreateCard(ctx context.Context, card *models.Card) (*mod
 			complete_before,
 			created_at,
 			updated_at
-		) VALUES (:author_board_member_id, :list_id, :content, :position, :complete_before, :created_at, :updated_at)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -40,17 +40,21 @@ func (cr *CardRepoImpl) CreateCard(ctx context.Context, card *models.Card) (*mod
 	card.CreatedAt = now
 	card.UpdatedAt = now
 
-	rows, err := cr.DB.NamedQueryContext(ctx, query, card)
+	// Выполняем запрос с позиционными параметрами
+	err := cr.DB.QueryRowContext(
+		ctx,
+		query,
+		card.AuthorBoardMemberId,
+		card.ListId,
+		card.Content,
+		card.Position,
+		card.CompleteBefore,
+		card.CreatedAt,
+		card.UpdatedAt,
+	).Scan(&card.ID, &card.CreatedAt, &card.UpdatedAt)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create card: %w", err)
-	}
-	defer rows.Close()
-
-	if rows.Next() {
-		err = rows.Scan(&card.ID, &card.CreatedAt, &card.UpdatedAt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan created card: %w", err)
-		}
 	}
 
 	return card, nil
@@ -64,19 +68,30 @@ func (cr *CardRepoImpl) GetCard(ctx context.Context, id int64) (*models.Card, er
 			author_board_member_id, 
 			list_id, 
 			content, 
-			position, 
+			position,
+			completed, 
 			created_at, 
 			updated_at, 
 			complete_before
-		FROM cards 
-		WHERE id = $1 AND deleted_at IS NULL
+		FROM card 
+		WHERE id = $1
 	`
 
 	var card models.Card
-	err := cr.DB.GetContext(ctx, &card, query, id)
+	err := cr.DB.QueryRowContext(ctx, query, id).Scan(
+		&card.ID,
+		&card.AuthorBoardMemberId,
+		&card.ListId,
+		&card.Content,
+		&card.Position,
+		&card.Completed,
+		&card.CreatedAt,
+		&card.UpdatedAt,
+		&card.CompleteBefore,
+	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("card not found")
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("card not found: %w", err)
 		}
 		return nil, fmt.Errorf("failed to get card: %w", err)
 	}
@@ -93,64 +108,85 @@ func (cr *CardRepoImpl) GetCardsByList(ctx context.Context, listID int64) ([]*mo
 			list_id, 
 			content, 
 			position, 
+			completed,
 			created_at, 
 			updated_at, 
 			complete_before
-		FROM cards 
-		WHERE list_id = $1 AND deleted_at IS NULL
+		FROM card 
+		WHERE list_id = $1
 		ORDER BY position ASC, created_at ASC
 	`
 
-	var cards []*models.Card
-	err := cr.DB.SelectContext(ctx, &cards, query, listID)
+	rows, err := cr.DB.QueryContext(ctx, query, listID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cards by list: %w", err)
+	}
+	defer rows.Close()
+
+	var cards []*models.Card
+	for rows.Next() {
+		var card models.Card
+		err := rows.Scan(
+			&card.ID,
+			&card.AuthorBoardMemberId,
+			&card.ListId,
+			&card.Content,
+			&card.Position,
+			&card.Completed,
+			&card.CreatedAt,
+			&card.UpdatedAt,
+			&card.CompleteBefore,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan card: %w", err)
+		}
+		cards = append(cards, &card)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating cards: %w", err)
 	}
 
 	return cards, nil
 }
 
-// UpdateCard обновляет карточку
 func (cr *CardRepoImpl) UpdateCard(ctx context.Context, card *models.Card) (*models.Card, error) {
 	query := `
-		UPDATE cards 
-		SET 
-			author_board_member_id = :author_board_member_id,
-			list_id = :list_id,
-			content = :content,
-			position = :position,
-			complete_before = :complete_before,
-			updated_at = :updated_at
-		WHERE id = :id AND deleted_at IS NULL
-		RETURNING updated_at
-	`
+        UPDATE card 
+        SET 
+            content = $1,
+            completed = $2,
+            updated_at = $3,
+            complete_before = $4
+        WHERE id = $5
+        RETURNING updated_at
+    `
 
 	card.UpdatedAt = time.Now()
 
-	result, err := cr.DB.NamedExecContext(ctx, query, card)
+	var updatedAt time.Time
+	err := cr.DB.QueryRowContext(ctx, query,
+		card.Content,
+		card.Completed,
+		card.UpdatedAt,
+		card.CompleteBefore,
+		card.ID,
+	).Scan(&updatedAt)
+
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("card not found")
+		}
 		return nil, fmt.Errorf("failed to update card: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	if rowsAffected == 0 {
-		return nil, errors.New("card not found")
-	}
-
+	card.UpdatedAt = updatedAt
 	return card, nil
 }
 
-// DeleteCard мягко удаляет карточку (устанавливает deleted_at)
+// Удаляет карточку
 func (cr *CardRepoImpl) DeleteCard(ctx context.Context, id int64) error {
-	query := `
-		UPDATE cards 
-		SET deleted_at = $1 
-		WHERE id = $2 AND deleted_at IS NULL
-	`
+	query := `DELETE FROM card WHERE id = $1`
 
 	result, err := cr.DB.ExecContext(ctx, query, time.Now(), id)
 	if err != nil {
@@ -163,7 +199,7 @@ func (cr *CardRepoImpl) DeleteCard(ctx context.Context, id int64) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("card not found")
+		return errors.New("Card not found")
 	}
 
 	return nil
@@ -189,12 +225,12 @@ func (cr *CardRepoImpl) UpdateCardPosition(ctx context.Context, cardID int64, ne
 
 	// Обновляем позицию карточки
 	query := `
-		UPDATE cards 
+		UPDATE card 
 		SET 
 			position = $1,
 			list_id = $2,
 			updated_at = $3
-		WHERE id = $4 AND deleted_at IS NULL
+		WHERE id = $4
 	`
 
 	result, err := tx.ExecContext(ctx, query, newPosition, newListID, time.Now(), cardID)
@@ -222,12 +258,13 @@ func (cr *CardRepoImpl) GetCardsByBoardMember(ctx context.Context, boardMemberID
 			author_board_member_id, 
 			list_id, 
 			content, 
-			position, 
+			position,
+			completed, 
 			created_at, 
 			updated_at, 
 			complete_before
-		FROM cards 
-		WHERE author_board_member_id = $1 AND deleted_at IS NULL
+		FROM card 
+		WHERE author_board_member_id = $1
 		ORDER BY created_at DESC
 	`
 

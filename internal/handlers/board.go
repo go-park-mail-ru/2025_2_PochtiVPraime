@@ -38,61 +38,56 @@ func NewBoardHandler(boardService *services.BoardService, authService *services.
 func (bh *BoardHandler) GetBoards(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log.Println("GetBoard")
-	switch r.Method {
-	case http.MethodPost:
-		decoder := json.NewDecoder(r.Body)
-		newBoard := new(models.Board)
-		err := decoder.Decode(newBoard)
-		if err != nil {
-			log.Printf("error while unmarshalling JSON: %s", err)
-			w.Write([]byte("{}"))
-			return
-		}
-		err = bh.BoardService.AddBoard(ctx, newBoard)
-		if err != nil {
-			log.Printf("error while create Board: %s", err)
-			http.Error(w, "400 :"+err.Error(), http.StatusBadRequest)
-			return
-		}
-	case http.MethodGet:
-		cookie, err := r.Cookie("session_id")
-		if err != nil {
-			http.Error(w, "Cookie not found", http.StatusNotFound)
-			log.Println("Cookie not found")
-			return
-		}
-
-		tokenString := cookie.Value
-		user, err := bh.AuthService.GetUserFromToken(ctx, tokenString)
-		//User, err := h.AuthService.GetCurrentUser()
-		if err != nil {
-			http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
-			log.Println("error:", err)
-			return
-		}
-		boards, err := bh.BoardService.GetBoards(ctx, user.ID)
-		if err != nil {
-			log.Printf("error while get boards: %s", err)
-			return
-		}
-		json_Boards, errB := json.Marshal(boards)
-		if errB != nil {
-			log.Printf("error while serialize Boards: %s", errB)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(json_Boards)
-	default:
-		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
-		log.Printf("Запрос " + r.Method + ",а должен быть GET или POST")
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Cookie not found", http.StatusNotFound)
+		log.Println("Cookie not found")
 		return
 	}
 
+	tokenString := cookie.Value
+	user, err := bh.AuthService.GetUserFromToken(ctx, tokenString)
+	//User, err := h.AuthService.GetCurrentUser()
+	if err != nil {
+		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
+		log.Println("error:", err)
+		return
+	}
+	boards, err := bh.BoardService.GetBoards(ctx, user.ID)
+	if err != nil {
+		log.Printf("error while get boards: %s", err)
+		return
+	}
+	json_Boards, errB := json.Marshal(boards)
+	if errB != nil {
+		log.Printf("error while serialize Boards: %s", errB)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(json_Boards)
+
+}
+func (bh *BoardHandler) CreateBoards(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	decoder := json.NewDecoder(r.Body)
+	newBoard := new(models.Board)
+	err := decoder.Decode(newBoard)
+	if err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.Write([]byte("{}"))
+		return
+	}
+	err = bh.BoardService.AddBoard(ctx, newBoard)
+	if err != nil {
+		log.Printf("error while create Board: %s", err)
+		http.Error(w, "400 :"+err.Error(), http.StatusBadRequest)
+		return
+	}
 }
 
 func (bh *BoardHandler) BoardDelete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	vars, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	vars, _ := strconv.ParseInt(r.PathValue("boardId"), 10, 64)
 	err := bh.BoardService.DeleteBoard(ctx, vars)
 	if err != nil {
 		log.Printf("error while delete Board: %s", err)
@@ -118,7 +113,7 @@ func (bh *BoardHandler) BoardRestore(w http.ResponseWriter, r *http.Request) {
 func (bh *BoardHandler) GetBoard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	boardID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	boardID, err := strconv.ParseInt(r.PathValue("boardId"), 10, 64)
 	if err != nil {
 		http.Error(w, "invalid board_id", http.StatusBadRequest)
 		return
@@ -135,6 +130,67 @@ func (bh *BoardHandler) GetBoard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(fullBoard); err != nil {
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		return
+	}
+}
+func (bh *BoardHandler) RenameBoard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	vars, _ := strconv.ParseInt(r.PathValue("boardId"), 10, 64)
+	decoder := json.NewDecoder(r.Body)
+	newBoard := new(models.Board)
+	err := decoder.Decode(newBoard)
+	if err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.Write([]byte("{}"))
+		return
+	}
+	newBoard.ID = vars
+	log.Println(newBoard)
+	board, err := bh.BoardService.RenameBoard(ctx, newBoard)
+	if err != nil {
+		http.Error(w, "failed to rename board", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(board); err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		return
+	}
+
+}
+func (bh *BoardHandler) ArchivedBoard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	vars, _ := strconv.ParseInt(r.PathValue("boardId"), 10, 64)
+	err := bh.BoardService.ArchivedBoard(ctx, vars)
+	if err != nil {
+		http.Error(w, "failed to archived board", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (bh *BoardHandler) Board(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		bh.GetBoard(w, r)
+	case http.MethodDelete:
+		bh.BoardDelete(w, r)
+	case http.MethodPut:
+		bh.RenameBoard(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func (bh *BoardHandler) CreateOrGetBoards(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		bh.CreateBoards(w, r)
+	case http.MethodGet:
+		bh.GetBoards(w, r)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		log.Printf("Запрос " + r.Method + ",а должен быть GET или POST")
 		return
 	}
 }
