@@ -50,7 +50,7 @@ func (ls *ListService) CreateList(ctx context.Context, title string, boardId int
 	}
 
 	// Определяем позицию нового списка (в конец)
-	position := 0
+	position := 1
 	if len(existingLists) > 0 {
 		position = existingLists[len(existingLists)-1].Position + 1
 	}

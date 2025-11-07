@@ -60,7 +60,7 @@ func (ch *CardHandler) CreateCard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-
+	log.Println(newCard)
 	// Устанавливаем создателя карточки
 	zaglushka := 1
 	newCard.AuthorBoardMemberId = int64(zaglushka) //реализовано пока так, тк нет реализации board_member

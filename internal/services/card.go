@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
@@ -28,6 +29,7 @@ func NewCardService(cardRepository repository.CardsRepository, listRepository re
 }
 
 func (cs *CardService) CreateCard(ctx context.Context, rawCard *models.Card, listId int64) (*models.Card, error) {
+	log.Println(rawCard.Content + "gfggfg")
 	if len(rawCard.Content) < 1 || len(rawCard.Content) > 1000 {
 		return nil, errors.New("Invalid size of content")
 	}
@@ -45,7 +47,7 @@ func (cs *CardService) CreateCard(ctx context.Context, rawCard *models.Card, lis
 	}
 
 	// Определяем позицию новой карточки (в конец)
-	position := 0
+	position := 1
 	if len(existingCards) > 0 {
 		position = existingCards[len(existingCards)-1].Position + 1
 	}

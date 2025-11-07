@@ -123,13 +123,15 @@ func (lh *ListHandler) GetLists(w http.ResponseWriter, r *http.Request) {
 func (lh *ListHandler) UpdateList(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	// Получаем пользователя из токена
-	user, err := lh.GetUserFromRequest(ctx, r)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		log.Println("Authorization error:", err)
-		return
-	}
+	/*
+		// Получаем пользователя из токена
+		user, err := lh.GetUserFromRequest(ctx, r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			log.Println("Authorization error:", err)
+			return
+		}
+	*/
 
 	listID, err := strconv.ParseInt(r.PathValue("listId"), 10, 64)
 	if err != nil {
@@ -153,9 +155,9 @@ func (lh *ListHandler) UpdateList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Title is required", http.StatusBadRequest)
 		return
 	}
-
+	zaglushka := 1
 	// Обновляем список через сервис
-	updatedList, err := lh.ListService.UpdateList(ctx, &list, user.ID)
+	updatedList, err := lh.ListService.UpdateList(ctx, &list, int64(zaglushka))
 	if err != nil {
 		log.Printf("Error updating list: %s", err)
 		// Можно добавить проверку на конкретные ошибки (например, "not found", "access denied")
@@ -198,13 +200,15 @@ func (lh *ListHandler) GetList(w http.ResponseWriter, r *http.Request) {
 func (lh *ListHandler) DeleteList(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	// Получаем пользователя из токена
-	user, err := lh.GetUserFromRequest(ctx, r)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		log.Println("Authorization error:", err)
-		return
-	}
+	/*
+		// Получаем пользователя из токена
+		user, err := lh.GetUserFromRequest(ctx, r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			log.Println("Authorization error:", err)
+			return
+		}
+	*/
 
 	listID, err := strconv.ParseInt(r.PathValue("listId"), 10, 64)
 	if err != nil {
@@ -212,8 +216,9 @@ func (lh *ListHandler) DeleteList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	zaglushka := 1
 	// Удаляем список через сервис
-	err = lh.ListService.DeleteListWithCard(ctx, listID, user.ID)
+	err = lh.ListService.DeleteListWithCard(ctx, listID, int64(zaglushka))
 	if err != nil {
 		log.Printf("Error deleting list: %s", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

@@ -41,8 +41,8 @@ func main() {
 	ch := handlers.NewCardHandler(cs, as)
 
 	mux.HandleFunc("/api/auth/register", ah.Register)
-	//mux.HandleFunc("/api/user/profile", ah.UserUpdate)
-	//mux.HandleFunc("/api/user/password", ah.PasswordUpdate)
+	mux.HandleFunc("/api/user/profile", ah.UserUpdate)
+	mux.HandleFunc("/api/user/password", ah.PasswordUpdate)
 	mux.HandleFunc("/api/auth/login", ah.Login)
 	mux.HandleFunc("/api/auth/me", ah.Me)
 	mux.HandleFunc("/api/auth/logout", ah.Logout)

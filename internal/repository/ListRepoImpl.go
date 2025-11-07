@@ -147,11 +147,11 @@ func (lr *ListRepoImpl) UpdateList(ctx context.Context, list *models.List) (*mod
 	return list, nil
 }
 
-// Delete удаляет список (мягкое удаление)
+// Delete удаляет список
 func (lr *ListRepoImpl) DeleteList(ctx context.Context, id int64) error {
-	query := `DELETE FROM board WHERE id = $1`
+	query := `DELETE FROM list WHERE id = $1`
 
-	result, err := lr.DB.ExecContext(ctx, query, time.Now(), id)
+	result, err := lr.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete list: %w", err)
 	}

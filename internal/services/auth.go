@@ -203,8 +203,8 @@ func (as *AuthService) Logout() {
 func (as *AuthService) UpdateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	localUser, err := as.UserRepository.GetUserByID(ctx, user.ID)
 	if err != nil {
-		log.Printf("wrong username")
-		return nil, errors.New("Нет пользователя с таким именем")
+		log.Printf("wrong userId")
+		return nil, errors.New("Нет пользователя с таким id")
 	}
 	if user.Email != "" {
 		localUser.Email = user.Email
@@ -212,7 +212,6 @@ func (as *AuthService) UpdateUser(ctx context.Context, user *models.User) (*mode
 	if user.Username != "" {
 		localUser.Username = user.Username
 	}
-	localUser.UpdatedAt = time.Now()
 	//изменение авы в будущем
 	return as.UserRepository.UpdateUser(ctx, localUser)
 }
@@ -223,9 +222,21 @@ func (as *AuthService) PasswordUpdate(ctx context.Context, oldPassword string, n
 		log.Printf("wrong username")
 		return nil, errors.New("Нет пользователя с таким именем")
 	}
-	localUser.UpdatedAt = time.Now()
 	if oldPassword == newPassword {
 		return nil, errors.New("Новый и старый пароли не должны совпадать")
 	}
+	if len(newPassword) < 6 {
+		newErr := errors.New("слишком короткий пароль")
+		log.Printf("error while name not valid: %s", newErr)
+		return nil, newErr
+	}
+
+	cost := bcrypt.DefaultCost
+	encode_pass, err := bcrypt.GenerateFromPassword([]byte(newPassword), cost)
+	if err != nil {
+		log.Printf("error while encode password: %s", err)
+		return nil, err
+	}
+	localUser.Password = string(encode_pass)
 	return as.UserRepository.UpdateUser(ctx, localUser)
 }

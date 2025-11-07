@@ -171,6 +171,7 @@ func (h *AuthHandler) UserUpdate(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("{}"))
 		return
 	}
+	log.Println(newUserInput)
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		http.Error(w, "Cookie not found", http.StatusNotFound)

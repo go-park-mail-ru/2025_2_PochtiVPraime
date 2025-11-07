@@ -121,8 +121,8 @@ func (ur *UserRepoImpl) GetUserByUsername(ctx context.Context, username string) 
 func (ur *UserRepoImpl) UpdateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	query := `
 		UPDATE "user" 
-		SET email = $1, username = $2, password = $3, avatar_id = $4, updated_at = $5
-		WHERE id = $6 AND deleted_at IS NULL
+		SET email = $1, username = $2, password = $3, updated_at = $4
+		WHERE id = $5
 		RETURNING updated_at
 	`
 
@@ -132,7 +132,7 @@ func (ur *UserRepoImpl) UpdateUser(ctx context.Context, user *models.User) (*mod
 		user.Email,
 		user.Username,
 		user.Password,
-		user.AvatarID,
+		//user.AvatarID,
 		user.UpdatedAt,
 		user.ID,
 	).Scan(&user.UpdatedAt)

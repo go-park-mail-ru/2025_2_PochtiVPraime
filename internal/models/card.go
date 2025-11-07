@@ -17,6 +17,6 @@ type Card struct {
 
 type CardData struct {
 	ID        int64  `json:"id"`
-	Content   string `json:"text"`
+	Content   string `json:"content"`
 	Completed bool   `json:"isCompleted"`
 }
