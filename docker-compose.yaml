@@ -18,7 +18,7 @@ services:
     ports:
       - "54320:5432"  # Маппинг порта 54320 хоста на 5432 контейнера
     environment:
-      - POSTGRES_DB=TaskFlowDB
+      - POSTGRES_DB=TaskflowDB
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
     restart: unless-stopped
