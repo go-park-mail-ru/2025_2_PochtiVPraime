@@ -1,12 +1,10 @@
 package main
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/pressly/goose/v3"
 	"github.com/rs/cors"
 
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/handlers"
@@ -23,10 +21,6 @@ func main() {
 		panic(err)
 	}
 	defer conn.Close()
-	// Накатить миграции
-	if err := goose.Up(conn.DB, "db/migrations"); err != nil {
-		log.Fatal(err)
-	}
 
 	//repository
 	ur := repository.NewUserRepoImpl(conn)
