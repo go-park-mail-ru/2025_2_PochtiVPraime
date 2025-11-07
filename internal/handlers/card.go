@@ -144,7 +144,7 @@ func (ch *CardHandler) GetListCards(w http.ResponseWriter, r *http.Request) {
 // UpdateCard обрабатывает PUT /board/{boardId}/list/{listId}/task/{taskId}
 func (ch *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-
+	log.Println("Upadte Card")
 	if r.Method != http.MethodPut {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -169,7 +169,7 @@ func (ch *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	//log.Println(card)
+	log.Println(card)
 
 	// Проверяем, что пользователь имеет доступ к карточке
 	_, err = ch.CardService.GetCard(ctx, cardID, user.ID)

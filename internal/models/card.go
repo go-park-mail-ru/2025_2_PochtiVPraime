@@ -9,7 +9,7 @@ type Card struct {
 	ListId              int64     `json:"list_id,omitempty"`
 	Content             string    `json:"content,omitempty"`
 	Position            int       `json:"position,omitempty"`
-	Completed           bool      `json:"completed,omitempty"`
+	Completed           bool      `json:"isCompleted"`
 	CreatedAt           time.Time `json:"created_at,omitempty"` //?
 	UpdatedAt           time.Time `json:"updated_at,omitempty"` //?
 	CompleteBefore      time.Time `json:"complete_before,omitempty"`

@@ -29,7 +29,8 @@ func NewCardService(cardRepository repository.CardsRepository, listRepository re
 }
 
 func (cs *CardService) CreateCard(ctx context.Context, rawCard *models.Card, listId int64) (*models.Card, error) {
-	log.Println(rawCard.Content + "gfggfg")
+	log.Println("Create Card")
+	log.Println(rawCard)
 	if len(rawCard.Content) < 1 || len(rawCard.Content) > 1000 {
 		return nil, errors.New("Invalid size of content")
 	}
@@ -110,14 +111,14 @@ func (cs *CardService) GetListCards(ctx context.Context, listID int64) ([]*model
 
 // UpdateCard обновляет карточку
 func (cs *CardService) UpdateCard(ctx context.Context, card *models.Card, cardId int64) (*models.Card, error) {
-	if len(card.Content) < 1 || len(card.Content) > 1000 {
-		return nil, errors.New("Invalid size of content")
-	}
 	existingCard, err := cs.CardRepository.GetCard(ctx, cardId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get card for update: %w", err)
+	}
 	if card.Content != "" {
 		existingCard.Content = card.Content
 	}
-	if card.Completed != false {
+	if card.Completed != existingCard.Completed {
 		existingCard.Completed = card.Completed
 	}
 	if card.CompleteBefore.After(time.Now()) {

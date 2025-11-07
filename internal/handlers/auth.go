@@ -187,18 +187,23 @@ func (h *AuthHandler) UserUpdate(w http.ResponseWriter, r *http.Request) {
 	newUserInput.ID = user.ID
 
 	user, err = h.AuthService.UpdateUser(ctx, newUserInput)
+	_ = user
 	if err != nil {
 		log.Printf("error while Update User in service: %s", err)
 		http.Error(w, "400 : "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	json_User, err := json.Marshal(user)
-	if err != nil {
-		log.Printf("error while marshalling User: %s", err)
-		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
-		return
-	}
-	w.Write([]byte(json_User))
+	w.WriteHeader(http.StatusOK)
+	/*
+		json_User, err := json.Marshal(user)
+		if err != nil {
+			log.Printf("error while marshalling User: %s", err)
+			http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+			return
+		}
+			/*
+		w.Write([]byte(json_User))
+	*/
 }
 
 func (h *AuthHandler) PasswordUpdate(w http.ResponseWriter, r *http.Request) {

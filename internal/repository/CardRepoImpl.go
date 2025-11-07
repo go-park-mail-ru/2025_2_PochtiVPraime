@@ -188,7 +188,7 @@ func (cr *CardRepoImpl) UpdateCard(ctx context.Context, card *models.Card) (*mod
 func (cr *CardRepoImpl) DeleteCard(ctx context.Context, id int64) error {
 	query := `DELETE FROM card WHERE id = $1`
 
-	result, err := cr.DB.ExecContext(ctx, query, time.Now(), id)
+	result, err := cr.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete card: %w", err)
 	}
@@ -233,7 +233,7 @@ func (cr *CardRepoImpl) UpdateCardPosition(ctx context.Context, cardID int64, ne
 		WHERE id = $4
 	`
 
-	result, err := tx.ExecContext(ctx, query, newPosition, newListID, time.Now(), cardID)
+	result, err := tx.ExecContext(ctx, query, newPosition, newListID, cardID)
 	if err != nil {
 		return fmt.Errorf("failed to update card position: %w", err)
 	}
