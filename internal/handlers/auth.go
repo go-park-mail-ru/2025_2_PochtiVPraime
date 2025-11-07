@@ -37,7 +37,7 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 // TODO: Если успех — вернуть 201 с JSON: { "user": { "id", "email", "username" } }
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// Пока просто отвечаем заглушкой
-	ctx := context.Background()
+	ctx := r.Context()
 	if r.Method != http.MethodPost {
 		log.Printf("Запрос " + r.Method + ",а должен быть POST")
 		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
@@ -78,7 +78,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 // --TODO: Если ошибка — вернуть 401 с сообщением "неправильный email или пароль"
 // --TODO: Если успех — вернуть 200 с JSON: { "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	if r.Method != http.MethodPost {
 		log.Printf("Запрос " + r.Method + ",а должен быть POST")
 		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
@@ -153,4 +153,99 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte(json_User))
 	//log.Printf(string(json_User))
+}
+
+func (h *AuthHandler) UserUpdate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	if r.Method != http.MethodPut {
+		log.Printf("Запрос " + r.Method + ",а должен быть POST")
+		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
+		return
+	}
+	defer r.Body.Close()
+	decoder := json.NewDecoder(r.Body)
+	newUserInput := new(models.User)
+	err := decoder.Decode(newUserInput)
+	if err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.Write([]byte("{}"))
+		return
+	}
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Cookie not found", http.StatusNotFound)
+		return
+	}
+	tokenString := cookie.Value
+	user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
+	if err != nil {
+		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
+		log.Println("error:", err)
+		return
+	}
+	newUserInput.ID = user.ID
+
+	user, err = h.AuthService.UpdateUser(ctx, newUserInput)
+	if err != nil {
+		log.Printf("error while Update User in service: %s", err)
+		http.Error(w, "400 : "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	json_User, err := json.Marshal(user)
+	if err != nil {
+		log.Printf("error while marshalling User: %s", err)
+		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+		return
+	}
+	w.Write([]byte(json_User))
+}
+
+func (h *AuthHandler) PasswordUpdate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	if r.Method != http.MethodPut {
+		log.Printf("Запрос " + r.Method + ",а должен быть POST")
+		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
+		return
+	}
+
+	type ChangePass struct {
+		OldPassword string `json:"oldPassword"`
+		NewPassword string `json:"newPassword"`
+	}
+
+	defer r.Body.Close()
+	decoder := json.NewDecoder(r.Body)
+	passwords := new(ChangePass)
+	err := decoder.Decode(passwords)
+	if err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.Write([]byte("{}"))
+		return
+	}
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Cookie not found", http.StatusNotFound)
+		return
+	}
+	tokenString := cookie.Value
+	user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
+	if err != nil {
+		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
+		log.Println("error:", err)
+		return
+	}
+
+	user, err = h.AuthService.PasswordUpdate(ctx, passwords.OldPassword, passwords.NewPassword, user.ID)
+	if err != nil {
+		log.Printf("error while Update User in service: %s", err)
+		http.Error(w, "400 : "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	json_User, err := json.Marshal(user)
+	if err != nil {
+		log.Printf("error while marshalling User: %s", err)
+		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+		return
+	}
+	w.Write([]byte(json_User))
 }

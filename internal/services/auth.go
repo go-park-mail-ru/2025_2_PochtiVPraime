@@ -199,3 +199,33 @@ func (as *AuthService) GetUserFromToken(ctx context.Context, tokenString string)
 func (as *AuthService) Logout() {
 	//currentUser = models.User{}
 }
+
+func (as *AuthService) UpdateUser(ctx context.Context, user *models.User) (*models.User, error) {
+	localUser, err := as.UserRepository.GetUserByID(ctx, user.ID)
+	if err != nil {
+		log.Printf("wrong username")
+		return nil, errors.New("Нет пользователя с таким именем")
+	}
+	if user.Email != "" {
+		localUser.Email = user.Email
+	}
+	if user.Username != "" {
+		localUser.Username = user.Username
+	}
+	localUser.UpdatedAt = time.Now()
+	//изменение авы в будущем
+	return as.UserRepository.UpdateUser(ctx, localUser)
+}
+
+func (as *AuthService) PasswordUpdate(ctx context.Context, oldPassword string, newPassword string, userId int64) (*models.User, error) {
+	localUser, err := as.UserRepository.GetUserByID(ctx, userId)
+	if err != nil {
+		log.Printf("wrong username")
+		return nil, errors.New("Нет пользователя с таким именем")
+	}
+	localUser.UpdatedAt = time.Now()
+	if oldPassword == newPassword {
+		return nil, errors.New("Новый и старый пароли не должны совпадать")
+	}
+	return as.UserRepository.UpdateUser(ctx, localUser)
+}

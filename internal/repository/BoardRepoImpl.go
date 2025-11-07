@@ -22,7 +22,7 @@ func NewBoardRepoImpl(db *sqlx.DB) BoardsRepository {
 
 func (br *BoardRepoImpl) CreateBoard(ctx context.Context, board *models.Board) (*models.Board, error) {
 	query := `
-		INSERT INTO board (owner_user_id, title, image, archived, created_at)
+		INSERT INTO board (owner_user_id, title, image_id, archived, created_at)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at
 	`

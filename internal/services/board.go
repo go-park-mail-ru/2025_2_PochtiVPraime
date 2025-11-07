@@ -65,6 +65,7 @@ func (bs *BoardService) AddBoard(ctx context.Context, board *models.Board) error
 			return errors.New("Пользователь не авторизирован")
 		}
 	*/
+	board.Image = 1 //костыль, который потом уберём
 	_, err := bs.BoardRepository.CreateBoard(ctx, board)
 	if err != nil {
 		return err

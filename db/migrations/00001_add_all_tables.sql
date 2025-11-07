@@ -189,6 +189,7 @@ CREATE TRIGGER trg_checklist_point_updated_at
 BEFORE UPDATE ON checklist_point
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
 -- +goose StatementEnd
 
 -- +goose Down

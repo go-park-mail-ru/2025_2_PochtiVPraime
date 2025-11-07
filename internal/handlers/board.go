@@ -77,6 +77,21 @@ func (bh *BoardHandler) CreateBoards(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("{}"))
 		return
 	}
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Cookie not found", http.StatusNotFound)
+		log.Println("Cookie not found")
+		return
+	}
+
+	tokenString := cookie.Value
+	user, err := bh.AuthService.GetUserFromToken(ctx, tokenString)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		log.Println("Authorization error:", err)
+		return
+	}
+	newBoard.OwnerId = user.ID
 	err = bh.BoardService.AddBoard(ctx, newBoard)
 	if err != nil {
 		log.Printf("error while create Board: %s", err)

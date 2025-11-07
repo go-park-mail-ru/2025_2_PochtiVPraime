@@ -9,7 +9,7 @@ type Board struct {
 	ID        int64     `json:"id"`
 	OwnerId   int64     `json:"owner_user_id"` // TODO: Добавить поле OwnerID — чтобы знать, кому принадлежит доска
 	Title     string    `json:"title"`
-	Image     string    `json:"image_id"`
+	Image     int64     `json:"image_id"`
 	Archived  bool      `json:"archived"`
 	CreatedAt time.Time `json:"created_at"` // TODO: Добавить CreatedAt
 	UpdatedAt time.Time `json:"updated_at"` // TODO: Добавить UpdateAt
