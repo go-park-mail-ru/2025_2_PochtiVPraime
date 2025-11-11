@@ -162,7 +162,7 @@ func (r *BoardRepoImpl) ArchiveBoard(ctx context.Context, id int64) error {
 
 func (r *BoardRepoImpl) RestoreBoard(ctx context.Context, id int64) error {
 	query := `
-		UPDATE boards
+		UPDATE board
 		SET archived = false
 		WHERE id = $1
 	`
