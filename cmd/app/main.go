@@ -22,6 +22,12 @@ func main() {
 	}
 	defer conn.Close()
 
+	/*
+		// Накатить миграции
+		if err := goose.Up(conn.DB, "../../db/migrations"); err != nil {
+			log.Fatal(err)
+		}
+	*/
 	//repository
 	ur := repository.NewUserRepoImpl(conn)
 	br := repository.NewBoardRepoImpl(conn)

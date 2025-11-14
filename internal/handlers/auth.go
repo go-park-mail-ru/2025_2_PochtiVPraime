@@ -25,17 +25,6 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 	}
 }
 
-// GetUserFromRequest извлекает пользователя из токена
-func (h *AuthHandler) GetUserFromRequest(ctx context.Context, r *http.Request) (*models.User, error) {
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		return nil, err
-	}
-
-	tokenString := cookie.Value
-	return h.AuthService.GetUserFromToken(ctx, tokenString)
-}
-
 // Register — обрабатывает POST api/auth/register
 // --TODO: Проверить, что метод POST (иначе 405)
 // --TODO: Декодировать JSON из тела запроса (email, username, password)
@@ -142,16 +131,13 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	/*
-		cookie, err := r.Cookie("session_id")
-		if err != nil {
-			http.Error(w, "Cookie not found", http.StatusNotFound)
-			return
-		}
-		tokenString := cookie.Value
-		user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
-	*/
-	user, err := h.GetUserFromRequest(ctx, r)
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Cookie not found", http.StatusNotFound)
+		return
+	}
+	tokenString := cookie.Value
+	user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
 	if err != nil {
 		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
 		log.Println("error:", err)
@@ -186,16 +172,13 @@ func (h *AuthHandler) UserUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(newUserInput)
-	/*
-		cookie, err := r.Cookie("session_id")
-		if err != nil {
-			http.Error(w, "Cookie not found", http.StatusNotFound)
-			return
-		}
-		tokenString := cookie.Value
-		user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
-	*/
-	user, err := h.GetUserFromRequest(ctx, r)
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Cookie not found", http.StatusNotFound)
+		return
+	}
+	tokenString := cookie.Value
+	user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
 	if err != nil {
 		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
 		log.Println("error:", err)
@@ -245,16 +228,13 @@ func (h *AuthHandler) PasswordUpdate(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("{}"))
 		return
 	}
-	/*
-		cookie, err := r.Cookie("session_id")
-		if err != nil {
-			http.Error(w, "Cookie not found", http.StatusNotFound)
-			return
-		}
-		tokenString := cookie.Value
-		user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
-	*/
-	user, err := h.GetUserFromRequest(ctx, r)
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		http.Error(w, "Cookie not found", http.StatusNotFound)
+		return
+	}
+	tokenString := cookie.Value
+	user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
 	if err != nil {
 		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
 		log.Println("error:", err)
