@@ -16,6 +16,14 @@ type UserRepository interface {
 	DeleteUser(ctx context.Context, id int64) error
 }
 
+type BoardMemberRepository interface {
+	CreateBoardMember(ctx context.Context, user *models.BoardMember) (*models.BoardMember, error)
+	GetBoardMemberById(ctx context.Context, id int64) (*models.BoardMember, error)
+	GetBoardMemberByUserId(ctx context.Context, userId int64) (*models.BoardMember, error)
+	ChangeRole(ctx context.Context, newRole string, memberId int64) error
+	DeleteBoardMember(ctx context.Context, id int64) error
+}
+
 type BoardsRepository interface {
 	CreateBoard(ctx context.Context, board *models.Board) (*models.Board, error)
 	GetBoardById(ctx context.Context, id int64) (*models.Board, error)

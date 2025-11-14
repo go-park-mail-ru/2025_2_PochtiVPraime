@@ -57,7 +57,7 @@ func (bs *BoardService) GetBoards(ctx context.Context, userId int64) (*models.Bo
 func (bs *BoardService) AddBoard(ctx context.Context, board *models.Board) error {
 
 	if board.Title == "" {
-		return errors.New("Нет Title")
+		return errors.New("Нет заголовка")
 	}
 	board.Archived = false
 	board.Image = 1 //костыль, который потом уберём

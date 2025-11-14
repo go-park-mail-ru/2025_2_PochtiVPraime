@@ -15,7 +15,7 @@ import (
 func main() {
 
 	mux := http.NewServeMux()
-	connStr := "host=db-1 port=5432 user=user password=password dbname=TaskflowDB sslmode=disable"
+	connStr := "host=localhost port=54320 user=user password=password dbname=TaskflowDB sslmode=disable"
 	conn, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		panic(err)
