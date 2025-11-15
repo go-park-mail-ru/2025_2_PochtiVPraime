@@ -136,14 +136,14 @@ func (br *BoardRepoImpl) UpdateBoard(ctx context.Context, board *models.Board) (
 	return board, nil
 }
 
-func (r *BoardRepoImpl) ArchiveBoard(ctx context.Context, id int64) error {
+func (br *BoardRepoImpl) ArchiveBoard(ctx context.Context, id int64) error {
 	query := `
 		UPDATE board
 		SET archived = true
 		WHERE id = $1
 	`
 
-	result, err := r.DB.ExecContext(ctx, query, id)
+	result, err := br.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("не удалось заархивировать доску: %w", err)
 	}
@@ -160,14 +160,14 @@ func (r *BoardRepoImpl) ArchiveBoard(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *BoardRepoImpl) RestoreBoard(ctx context.Context, id int64) error {
+func (br *BoardRepoImpl) RestoreBoard(ctx context.Context, id int64) error {
 	query := `
 		UPDATE board
 		SET archived = false
 		WHERE id = $1
 	`
 
-	result, err := r.DB.ExecContext(ctx, query, id)
+	result, err := br.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("не удалось восстановить доску: %w", err)
 	}
@@ -184,10 +184,10 @@ func (r *BoardRepoImpl) RestoreBoard(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *BoardRepoImpl) DeleteBoard(ctx context.Context, id int64) error {
+func (br *BoardRepoImpl) DeleteBoard(ctx context.Context, id int64) error {
 	query := `DELETE FROM board WHERE id = $1`
 
-	result, err := r.DB.ExecContext(ctx, query, id)
+	result, err := br.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("не удалось удалить доску %w", err)
 	}

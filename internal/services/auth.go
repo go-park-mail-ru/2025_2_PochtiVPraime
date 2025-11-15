@@ -191,7 +191,7 @@ func (as *AuthService) UpdateUser(ctx context.Context, user *models.User) (*mode
 	localUser, err := as.UserRepository.GetUserByID(ctx, user.ID)
 	if err != nil {
 		log.Printf("wrong userId")
-		return nil, errors.New("Нет пользователя с таким id")
+		return nil, errors.New("нет пользователя с таким id")
 	}
 	if user.Email != "" {
 		localUser.Email = user.Email
@@ -207,10 +207,17 @@ func (as *AuthService) PasswordUpdate(ctx context.Context, oldPassword string, n
 	localUser, err := as.UserRepository.GetUserByID(ctx, userId)
 	if err != nil {
 		log.Printf("wrong username")
-		return nil, errors.New("Нет пользователя с таким именем")
+		return nil, errors.New("нет пользователя с таким именем")
 	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(localUser.Password), []byte(oldPassword))
+	if err != nil {
+		log.Printf("Wrong password: %s", err)
+		return nil, errors.New("неправильный пароль")
+	}
+
 	if oldPassword == newPassword {
-		return nil, errors.New("Новый и старый пароли не должны совпадать")
+		return nil, errors.New("новый и старый пароли не должны совпадать")
 	}
 	if len(newPassword) < 6 {
 		newErr := errors.New("слишком короткий пароль")

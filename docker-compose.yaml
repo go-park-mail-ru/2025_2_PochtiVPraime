@@ -21,6 +21,8 @@ services:
       - POSTGRES_DB=TaskflowDB
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
+    volumes:
+      - ./db/migrations/:/docker-enetrypoint-00001_add_all_tablesdb.d  
     restart: unless-stopped
 
 volumes:

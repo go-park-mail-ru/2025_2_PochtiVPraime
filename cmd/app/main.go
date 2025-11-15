@@ -15,11 +15,12 @@ import (
 func main() {
 
 	mux := http.NewServeMux()
-	connStr := "host=db-1 port=5432 user=user password=password dbname=TaskflowDB sslmode=disable"
+	connStr := "host=localhost port=54320 user=user password=password dbname=TaskflowDB sslmode=disable"
 	conn, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		panic(err)
 	}
+
 	defer conn.Close()
 
 	//repository
@@ -27,18 +28,21 @@ func main() {
 	br := repository.NewBoardRepoImpl(conn)
 	lr := repository.NewListRepoImpl(conn)
 	cr := repository.NewCardRepoImpl(conn)
+	sr := repository.NewSupportRepoImpl(conn)
 
 	//services
 	as := services.NewAuthService(ur)
 	bs := services.NewBoardService(br, lr, cr, ur)
 	ls := services.NewListService(lr, br, cr)
 	cs := services.NewCardService(cr, lr, br)
+	ss := services.NewSupportService(sr)
 
 	//handlers
 	ah := handlers.NewAuthHandler(as)
 	bh := handlers.NewBoardHandler(bs, as)
 	lh := handlers.NewListHandler(ls, as)
 	ch := handlers.NewCardHandler(cs, as)
+	sh := handlers.NewSupportHandler(ss, as)
 
 	mux.HandleFunc("/api/auth/register", ah.Register)
 	mux.HandleFunc("/api/user/profile", ah.UserUpdate)
@@ -54,6 +58,9 @@ func main() {
 	mux.HandleFunc("/api/board/{boardId}/lists/{listId}", lh.List)
 	mux.HandleFunc("/api/board/{boardId}/list/{listId}/tasks", ch.CreateOrGetCards)
 	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}", ch.Card)
+	mux.HandleFunc("/api/forms", sh.CreateOrGetForms)
+	mux.HandleFunc("/api/forms/{formId}", sh.DeleteOrGetForm)
+	mux.HandleFunc("/api/forms/statistic", sh.GetAllSupportForms)
 
 	// Настройка CORS с помощью библиотеки
 	c := cors.New(cors.Options{

@@ -51,3 +51,13 @@ type CardsRepository interface {
 	UpdateCardPosition(ctx context.Context, cardID int64, newPosition int, newListID int64) error
 	GetCardsByBoardMember(ctx context.Context, boardMemberID int64) ([]*models.Card, error)
 }
+
+type SupportRepository interface {
+	CreateSupportForm(ctx context.Context, board *models.SupportForm) error
+	GetSupportFormById(ctx context.Context, id int64) (*models.SupportForm, error)
+	GetSupportFormsByOwner(ctx context.Context, ownerID int64) ([]*models.SupportForm, error)
+	GetAllSupportForms(ctx context.Context) ([]*models.SupportForm, error)
+	//ArchiveBoard(ctx context.Context, id int64) error
+	//RestoreBoard(ctx context.Context, id int64) error
+	DeleteSupportForm(ctx context.Context, id int64) error
+}
