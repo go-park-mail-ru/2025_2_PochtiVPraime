@@ -81,7 +81,7 @@ func (ur *UserRepoImpl) GetUserByID(ctx context.Context, id int64) (*models.User
 	log.Println(user)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("user not found")
+			return nil, errors.New("пользователь не найден")
 		}
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (ur *UserRepoImpl) GetUserByUsername(ctx context.Context, username string) 
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("user not found")
+			return nil, errors.New("пользователь не найден")
 		}
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (ur *UserRepoImpl) UpdateUser(ctx context.Context, user *models.User) (*mod
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("user not found")
+			return nil, errors.New("пользователь не найден")
 		}
 
 		// Обработка ошибок уникальности
@@ -147,10 +147,10 @@ func (ur *UserRepoImpl) UpdateUser(ctx context.Context, user *models.User) (*mod
 			switch pqErr.Code.Name() {
 			case "unique_violation":
 				if pqErr.Constraint == "users_email_key" {
-					return nil, errors.New("email already exists")
+					return nil, errors.New("электронная почта уже существует")
 				}
 				if pqErr.Constraint == "users_username_key" {
-					return nil, errors.New("username already exists")
+					return nil, errors.New("имя пользователя уже сушествует")
 				}
 			}
 		}
@@ -176,7 +176,7 @@ func (ur *UserRepoImpl) DeleteUser(ctx context.Context, id int64) error {
 		}
 
 		if rowsAffected == 0 {
-			return errors.New("user not found")
+			return errors.New("пользоваетль не найден")
 		}
 		return err
 	}

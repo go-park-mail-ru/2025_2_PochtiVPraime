@@ -44,7 +44,7 @@ func (lr *ListRepoImpl) SaveList(ctx context.Context, list *models.List) (*model
 	).Scan(&list.ID, &list.CreatedAt, &list.UpdatedAt)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create list: %w", err)
+		return nil, fmt.Errorf("не удалось создать список: %w", err)
 	}
 
 	return list, nil
@@ -70,9 +70,9 @@ func (lr *ListRepoImpl) GetListByID(ctx context.Context, id int64) (*models.List
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("List not found")
+			return nil, errors.New("список не найден")
 		}
-		return nil, fmt.Errorf("failed to get list by id: %w", err)
+		return nil, fmt.Errorf("не удалось получить список по ИД: %w", err)
 	}
 
 	return &list, nil
@@ -89,7 +89,7 @@ func (lr *ListRepoImpl) GetListsByBoardID(ctx context.Context, boardID int64) ([
 
 	rows, err := lr.DB.QueryContext(ctx, query, boardID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get lists by board id: %w", err)
+		return nil, fmt.Errorf("не удалось получить списки по ИД доски: %w", err)
 	}
 	defer rows.Close()
 
@@ -105,13 +105,13 @@ func (lr *ListRepoImpl) GetListsByBoardID(ctx context.Context, boardID int64) ([
 			&list.UpdatedAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan list: %w", err)
+			return nil, fmt.Errorf("не удалось считать списки: %w", err)
 		}
 		lists = append(lists, &list)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating lists: %w", err)
+		return nil, fmt.Errorf("ошибка во времени иттерации по набору списков: %w", err)
 	}
 
 	return lists, nil
@@ -139,9 +139,9 @@ func (lr *ListRepoImpl) UpdateList(ctx context.Context, list *models.List) (*mod
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("List not found")
+			return nil, errors.New("список не найден")
 		}
-		return nil, fmt.Errorf("failed to update list: %w", err)
+		return nil, fmt.Errorf("не удалось обновить список: %w", err)
 	}
 
 	return list, nil
@@ -153,16 +153,16 @@ func (lr *ListRepoImpl) DeleteList(ctx context.Context, id int64) error {
 
 	result, err := lr.DB.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete list: %w", err)
+		return fmt.Errorf("не удалось удалить список: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return fmt.Errorf("не удалось получить количество удалённых списков: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("List not found")
+		return errors.New("список не найден")
 	}
 
 	return nil

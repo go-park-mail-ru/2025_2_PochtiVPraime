@@ -37,14 +37,7 @@ func NewAuthService(userRepo repository.UserRepository) *AuthService {
 }
 
 // Register — регистрирует нового пользователя
-// TODO: Проверить, что email не пустой
-// TODO: Проверить, что email содержит "@"
-// TODO: Проверить, что username не пустой
-// TODO: Проверить, что password не короче 6 символов
-// TODO: Проверить, что пользователь с таким email уже не существует
-// --TODO: Хешировать пароль
-// --TODO: Сохранить пользователя в базу данных (пока что в памяти)
-// --TODO: Вернуть *models.User без пароля
+
 func (as *AuthService) Register(ctx context.Context, user *models.User) (*models.User, error) {
 	email := user.Email
 	if !strings.Contains(email, "@") || len(email) == 0 { //наверное len должна быть хотябы 6
@@ -101,12 +94,6 @@ func (as *AuthService) Register(ctx context.Context, user *models.User) (*models
 }
 
 // Login — авторизует пользователя и возвращает JWT токен
-// --TODO: Проверить, что email и password не пустые
-// --TODO: Найти пользователя по email
-// --TODO: Сравнить пароль (когда будем хешировать — использовать bcrypt.CompareHashAndPassword)
-// --TODO: Создать JWT токен с payload: { "userId": 123, "exp": 1720000000 }
-// --TODO: Вернуть токен и nil — если всё ок
-// --TODO: Вернуть ошибку "неправильный email или пароль" — если не найден
 func (as *AuthService) Login(ctx context.Context, user *models.User) (string, error) {
 	username := user.Username
 	password := user.Password

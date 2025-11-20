@@ -37,7 +37,7 @@ func (br *BoardRepoImpl) CreateBoard(ctx context.Context, board *models.Board) (
 	).Scan(&board.ID, &createdAt)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create board: %w", err)
+		return nil, fmt.Errorf("не удалось создать доску: %w", err)
 	}
 
 	return board, nil
@@ -62,9 +62,9 @@ func (br *BoardRepoImpl) GetBoardById(ctx context.Context, id int64) (*models.Bo
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("board not found")
+			return nil, fmt.Errorf("доска не найдена")
 		}
-		return nil, fmt.Errorf("failed to get board: %w", err)
+		return nil, fmt.Errorf("не удалось получить доску: %w", err)
 	}
 
 	return &board, nil
@@ -80,7 +80,7 @@ func (br *BoardRepoImpl) GetBoardsByOwner(ctx context.Context, ownerID int64) ([
 
 	rows, err := br.DB.QueryContext(ctx, query, ownerID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get boards: %w", err)
+		return nil, fmt.Errorf("не удалось получить доски: %w", err)
 	}
 	defer rows.Close()
 
@@ -97,13 +97,13 @@ func (br *BoardRepoImpl) GetBoardsByOwner(ctx context.Context, ownerID int64) ([
 			&board.UpdatedAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan board: %w", err)
+			return nil, fmt.Errorf("не удалось считать доски: %w", err)
 		}
 		boards = append(boards, &board)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating boards: %w", err)
+		return nil, fmt.Errorf("ошибка во время иттерации по доскам: %w", err)
 	}
 
 	return boards, nil
@@ -128,9 +128,9 @@ func (br *BoardRepoImpl) UpdateBoard(ctx context.Context, board *models.Board) (
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("board not found or access denied")
+			return nil, fmt.Errorf("доска не найдена или нет доступа к ней")
 		}
-		return nil, fmt.Errorf("failed to update board: %w", err)
+		return nil, fmt.Errorf("не удалось обновить доску: %w", err)
 	}
 
 	return board, nil
@@ -145,16 +145,16 @@ func (r *BoardRepoImpl) ArchiveBoard(ctx context.Context, id int64) error {
 
 	result, err := r.DB.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to archive board: %w", err)
+		return fmt.Errorf("не удалось заархивировать доску: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return fmt.Errorf("не удалось получить количество заархивированных досок: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("board not found or access denied")
+		return fmt.Errorf("доска не найдена или нет доступа к архивации")
 	}
 
 	return nil
@@ -169,16 +169,16 @@ func (r *BoardRepoImpl) RestoreBoard(ctx context.Context, id int64) error {
 
 	result, err := r.DB.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to restore board: %w", err)
+		return fmt.Errorf("не удалось восстановить доску: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return fmt.Errorf("не удалось получить количество восстановленных досок: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("board not found or access denied")
+		return fmt.Errorf("доска не найдена или нет доступа к восстановлению")
 	}
 
 	return nil
@@ -189,16 +189,16 @@ func (r *BoardRepoImpl) DeleteBoard(ctx context.Context, id int64) error {
 
 	result, err := r.DB.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to hard delete board: %w", err)
+		return fmt.Errorf("не удалось удалить доску %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return fmt.Errorf("не удалось получить количество удалённых досок: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("board not found or access denied")
+		return fmt.Errorf("доска не найдена или нет доступа к удалению")
 	}
 
 	return nil

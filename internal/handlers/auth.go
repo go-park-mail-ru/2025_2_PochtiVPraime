@@ -40,7 +40,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodPost {
 		log.Printf("Запрос " + r.Method + ",а должен быть POST")
-		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
+		http.Error(w, "NotAcceptable", http.StatusNotAcceptable)
 		return
 	}
 	defer r.Body.Close()
@@ -56,13 +56,13 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	validUser, err := h.AuthService.Register(ctx, newUserInput)
 	if err != nil {
 		log.Printf("error while register User in service: %s", err)
-		http.Error(w, "400 : "+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	json_User, err := json.Marshal(validUser)
 	if err != nil {
 		log.Printf("error while marshalling User: %s", err)
-		http.Error(w, "400 : "+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.Write([]byte(json_User))
@@ -81,7 +81,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodPost {
 		log.Printf("Запрос " + r.Method + ",а должен быть POST")
-		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
+		http.Error(w, "NotAcceptable", http.StatusNotAcceptable)
 		return
 	}
 	defer r.Body.Close()
@@ -98,7 +98,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	h.JWT = JWT
 	if err != nil {
 		log.Printf("error while authorizate: %s", err)
-		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 	//установка куки
@@ -139,7 +139,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	tokenString := cookie.Value
 	user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
 	if err != nil {
-		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		log.Println("error:", err)
 		return
 	}
@@ -148,7 +148,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	json_User, err := json.Marshal(user)
 	if err != nil {
 		log.Printf("error while marshalling User: %s", err)
-		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 	w.Write([]byte(json_User))
@@ -159,7 +159,7 @@ func (h *AuthHandler) UserUpdate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodPut {
 		log.Printf("Запрос " + r.Method + ",а должен быть POST")
-		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
+		http.Error(w, "NotAcceptable", http.StatusNotAcceptable)
 		return
 	}
 	defer r.Body.Close()
@@ -180,7 +180,7 @@ func (h *AuthHandler) UserUpdate(w http.ResponseWriter, r *http.Request) {
 	tokenString := cookie.Value
 	user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
 	if err != nil {
-		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		log.Println("error:", err)
 		return
 	}
@@ -190,7 +190,7 @@ func (h *AuthHandler) UserUpdate(w http.ResponseWriter, r *http.Request) {
 	_ = user
 	if err != nil {
 		log.Printf("error while Update User in service: %s", err)
-		http.Error(w, "400 : "+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -210,7 +210,7 @@ func (h *AuthHandler) PasswordUpdate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	if r.Method != http.MethodPut {
 		log.Printf("Запрос " + r.Method + ",а должен быть POST")
-		http.Error(w, "405 : NotAcceptable", http.StatusNotAcceptable)
+		http.Error(w, "NotAcceptable", http.StatusNotAcceptable)
 		return
 	}
 
@@ -236,7 +236,7 @@ func (h *AuthHandler) PasswordUpdate(w http.ResponseWriter, r *http.Request) {
 	tokenString := cookie.Value
 	user, err := h.AuthService.GetUserFromToken(ctx, tokenString)
 	if err != nil {
-		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		log.Println("error:", err)
 		return
 	}
@@ -244,13 +244,13 @@ func (h *AuthHandler) PasswordUpdate(w http.ResponseWriter, r *http.Request) {
 	user, err = h.AuthService.PasswordUpdate(ctx, passwords.OldPassword, passwords.NewPassword, user.ID)
 	if err != nil {
 		log.Printf("error while Update User in service: %s", err)
-		http.Error(w, "400 : "+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	json_User, err := json.Marshal(user)
 	if err != nil {
 		log.Printf("error while marshalling User: %s", err)
-		http.Error(w, "400 : Bad Request", http.StatusBadRequest)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 	w.Write([]byte(json_User))

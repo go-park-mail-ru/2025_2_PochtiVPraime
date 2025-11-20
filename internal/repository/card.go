@@ -54,7 +54,7 @@ func (cr *CardRepoImpl) CreateCard(ctx context.Context, card *models.Card) (*mod
 	).Scan(&card.ID, &card.CreatedAt, &card.UpdatedAt)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create card: %w", err)
+		return nil, fmt.Errorf("не удалось создать карточку: %w", err)
 	}
 
 	return card, nil
@@ -91,9 +91,9 @@ func (cr *CardRepoImpl) GetCard(ctx context.Context, id int64) (*models.Card, er
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("card not found: %w", err)
+			return nil, fmt.Errorf("карточка не найдена: %w", err)
 		}
-		return nil, fmt.Errorf("failed to get card: %w", err)
+		return nil, fmt.Errorf("не удалось найти карточку: %w", err)
 	}
 
 	return &card, nil
@@ -119,7 +119,7 @@ func (cr *CardRepoImpl) GetCardsByList(ctx context.Context, listID int64) ([]*mo
 
 	rows, err := cr.DB.QueryContext(ctx, query, listID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cards by list: %w", err)
+		return nil, fmt.Errorf("не удалось найти карточку по списку: %w", err)
 	}
 	defer rows.Close()
 
@@ -138,13 +138,13 @@ func (cr *CardRepoImpl) GetCardsByList(ctx context.Context, listID int64) ([]*mo
 			&card.CompleteBefore,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan card: %w", err)
+			return nil, fmt.Errorf("не удалось получить карточки: %w", err)
 		}
 		cards = append(cards, &card)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating cards: %w", err)
+		return nil, fmt.Errorf("ошибка во время иттерации по карточкам: %w", err)
 	}
 
 	return cards, nil
@@ -175,9 +175,9 @@ func (cr *CardRepoImpl) UpdateCard(ctx context.Context, card *models.Card) (*mod
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("card not found")
+			return nil, errors.New("карточка не найдена")
 		}
-		return nil, fmt.Errorf("failed to update card: %w", err)
+		return nil, fmt.Errorf("не удалось обновить карточку: %w", err)
 	}
 
 	card.UpdatedAt = updatedAt
@@ -190,16 +190,16 @@ func (cr *CardRepoImpl) DeleteCard(ctx context.Context, id int64) error {
 
 	result, err := cr.DB.ExecContext(ctx, query, id)
 	if err != nil {
-		return fmt.Errorf("failed to delete card: %w", err)
+		return fmt.Errorf("не удалось удалить карточку: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return fmt.Errorf("не удалось получить количество измененных карточек: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("Card not found")
+		return errors.New("карточка не неайдена")
 	}
 
 	return nil
@@ -209,7 +209,7 @@ func (cr *CardRepoImpl) DeleteCard(ctx context.Context, id int64) error {
 func (cr *CardRepoImpl) UpdateCardPosition(ctx context.Context, cardID int64, newPosition int, newListID int64) error {
 	tx, err := cr.DB.BeginTxx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return fmt.Errorf("не удалось начать транзакцию: %w", err)
 	}
 	defer tx.Rollback()
 
@@ -217,10 +217,10 @@ func (cr *CardRepoImpl) UpdateCardPosition(ctx context.Context, cardID int64, ne
 	var exists bool
 	err = tx.GetContext(ctx, &exists, "SELECT EXISTS(SELECT 1 FROM cards WHERE id = $1 AND deleted_at IS NULL)", cardID)
 	if err != nil {
-		return fmt.Errorf("failed to check card existence: %w", err)
+		return fmt.Errorf("не удалось проверить существование карточки: %w", err)
 	}
 	if !exists {
-		return errors.New("card not found")
+		return errors.New("карточка не найдена")
 	}
 
 	// Обновляем позицию карточки
@@ -235,16 +235,16 @@ func (cr *CardRepoImpl) UpdateCardPosition(ctx context.Context, cardID int64, ne
 
 	result, err := tx.ExecContext(ctx, query, newPosition, newListID, cardID)
 	if err != nil {
-		return fmt.Errorf("failed to update card position: %w", err)
+		return fmt.Errorf("неудалось обновить положение карточки: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return fmt.Errorf("не удалось получить количество измененных карточек: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("card not found")
+		return errors.New("карточка не найдена")
 	}
 
 	return tx.Commit()
@@ -271,7 +271,7 @@ func (cr *CardRepoImpl) GetCardsByBoardMember(ctx context.Context, boardMemberID
 	var cards []*models.Card
 	err := cr.DB.SelectContext(ctx, &cards, query, boardMemberID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cards by board member: %w", err)
+		return nil, fmt.Errorf("не удалось получить карточки созданные участником доски: %w", err)
 	}
 
 	return cards, nil

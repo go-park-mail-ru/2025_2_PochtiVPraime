@@ -49,7 +49,7 @@ func (bh *BoardHandler) GetBoards(w http.ResponseWriter, r *http.Request) {
 	user, err := bh.AuthService.GetUserFromToken(ctx, tokenString)
 	//User, err := h.AuthService.GetCurrentUser()
 	if err != nil {
-		http.Error(w, "401 : "+err.Error(), http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		log.Println("error:", err)
 		return
 	}
@@ -95,7 +95,7 @@ func (bh *BoardHandler) CreateBoards(w http.ResponseWriter, r *http.Request) {
 	err = bh.BoardService.AddBoard(ctx, newBoard)
 	if err != nil {
 		log.Printf("error while create Board: %s", err)
-		http.Error(w, "400 :"+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 }
@@ -106,7 +106,7 @@ func (bh *BoardHandler) BoardDelete(w http.ResponseWriter, r *http.Request) {
 	err := bh.BoardService.DeleteBoard(ctx, vars)
 	if err != nil {
 		log.Printf("error while delete Board: %s", err)
-		http.Error(w, "400 :"+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	//w.Header().Set("Content-Type", "application/json")
@@ -119,7 +119,7 @@ func (bh *BoardHandler) BoardRestore(w http.ResponseWriter, r *http.Request) {
 	err := bh.BoardService.RestoreBoard(ctx, vars)
 	if err != nil {
 		log.Printf("error while restore Board: %s", err)
-		http.Error(w, "400 :"+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
