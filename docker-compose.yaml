@@ -1,27 +1,40 @@
 version: '3.8'
 
 services:
-  # Ваше приложение
+  db-1:
+    image: postgres:18
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=TaskflowDB  
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    healthcheck:  # ← ДОБАВЬТЕ ЭТО
+      test: [ "CMD-SHELL", "pg_isready -U user -d TaskflowDB" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    restart: unless-stopped
+
+  migrator:
+    image: ghcr.io/jackc/tern:latest
+    depends_on:
+      db-1:
+        condition: service_healthy  # ← ДОБАВЬТЕ ЭТО
+    volumes:
+      - ./db/migrations:/migrations
+    command: [ "migrate", "--config", "/migrations/tern.conf", "--migrations", "/migrations", "up" ]
+    restart: on-failure
+
   app:
     build:
       context: .
       dockerfile: dockerfile
     ports:
-      - "8080:8080"  # Пример порта для приложения
-    depends_on:
-      - db-1
-    restart: unless-stopped
-
-  # База данных PostgreSQL
-  db-1:
-    image: postgres:18
-    ports:
-      - "54320:5432"  # Маппинг порта 54320 хоста на 5432 контейнера
+      - "8080:8080"
     environment:
-      - POSTGRES_DB=TaskFlowDB
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
+      - DB_HOST=db-1
+    depends_on:
+      migrator:
+        condition: service_completed_successfully  # ← Ждем завершения миграций
     restart: unless-stopped
-
-volumes:
-  postgres_data:

@@ -22,8 +22,8 @@ func NewBoardRepoImpl(db *sqlx.DB) BoardsRepository {
 
 func (br *BoardRepoImpl) CreateBoard(ctx context.Context, board *models.Board) (*models.Board, error) {
 	query := `
-		INSERT INTO board (owner_user_id, title, image_id, archived, created_at)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO board (owner_user_id, title, archived, created_at)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at
 	`
 
@@ -31,7 +31,6 @@ func (br *BoardRepoImpl) CreateBoard(ctx context.Context, board *models.Board) (
 	err := br.DB.QueryRowContext(ctx, query,
 		board.OwnerId,
 		board.Title,
-		board.Image,
 		board.Archived,
 		time.Now(),
 	).Scan(&board.ID, &createdAt)
@@ -41,6 +40,50 @@ func (br *BoardRepoImpl) CreateBoard(ctx context.Context, board *models.Board) (
 	}
 
 	return board, nil
+}
+
+// GetUserBoards — возвращает доски, где пользователь владелец ИЛИ участник
+func (br *BoardRepoImpl) GetUserBoards(ctx context.Context, userID int64) ([]*models.Board, error) {
+    query := `
+        SELECT id, owner_user_id, title, archived, created_at, updated_at
+        FROM board
+        WHERE owner_user_id = $1
+        UNION
+        SELECT b.id, b.owner_user_id, b.title, b.archived, b.created_at, b.updated_at
+        FROM board b
+        JOIN board_member m ON b.id = m.board_id
+        WHERE m.user_id = $1
+        ORDER BY created_at DESC
+    `
+
+    rows, err := br.DB.QueryContext(ctx, query, userID)
+    if err != nil {
+        return nil, fmt.Errorf("не удалось получить доски пользователя: %w", err)
+    }
+    defer rows.Close()
+
+    var boards []*models.Board
+    for rows.Next() {
+        var board models.Board
+        err := rows.Scan(
+            &board.ID,
+            &board.OwnerId,
+            &board.Title,
+            &board.Archived,
+            &board.CreatedAt,
+            &board.UpdatedAt,
+        )
+        if err != nil {
+            return nil, fmt.Errorf("не удалось считать доски: %w", err)
+        }
+        boards = append(boards, &board)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, fmt.Errorf("ошибка во время итерации по доскам: %w", err)
+    }
+
+    return boards, nil
 }
 
 func (br *BoardRepoImpl) GetBoardById(ctx context.Context, id int64) (*models.Board, error) {

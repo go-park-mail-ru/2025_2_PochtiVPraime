@@ -10,20 +10,43 @@ import (
 
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/services"
+	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/websocket"
+
 )
 
 // ListHandler — обработчик HTTP-запросов для списков
 type ListHandler struct {
 	ListService services.ListService
 	AuthService services.AuthService
+	WSHub       *websocket.Hub
 }
 
 // NewListHandler — конструктор для Dependency Injection
-func NewListHandler(listService *services.ListService, authService *services.AuthService) *ListHandler {
+func NewListHandler(listService *services.ListService, authService *services.AuthService, wsHub *websocket.Hub) *ListHandler {
 	return &ListHandler{
 		ListService: *listService,
 		AuthService: *authService,
+		WSHub:       wsHub,
 	}
+}
+
+func (lh *ListHandler) broadcastListEvent(eventType string, payload interface{}) {
+    if lh.WSHub == nil {
+        log.Println("WSHub is nil - cannot broadcast list event")
+        return
+    }
+
+    message := map[string]interface{}{
+        "type":    eventType,
+        "payload": payload,
+    }
+    
+    msgBytes, err := json.Marshal(message)
+    if err != nil {
+        log.Printf("Error marshaling list message: %v", err)
+        return
+    }
+    lh.WSHub.BroadcastMessage(msgBytes)
 }
 
 // GetUserFromRequest извлекает пользователя из токена
@@ -84,6 +107,13 @@ func (lh *ListHandler) CreateList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+
+	//Отправка сообщения вебсокета
+	lh.broadcastListEvent("LIST_CREATED", map[string]interface{}{
+        "id":      newList.ID,
+        "title":   newList.Title,
+        "boardId": boardID,
+    })
 
 	// Возвращаем созданный список
 	w.Header().Set("Content-Type", "application/json")
@@ -165,6 +195,14 @@ func (lh *ListHandler) UpdateList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//Отправка сообщения вебсокета
+	boardID, _ := strconv.ParseInt(r.PathValue("boardId"), 10, 64)
+    lh.broadcastListEvent("LIST_UPDATED", map[string]interface{}{
+        "id":      updatedList.ID,
+        "title":   updatedList.Title,
+        "boardId": boardID,
+    })
+
 	// Возвращаем обновленный список
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(updatedList); err != nil {
@@ -224,6 +262,13 @@ func (lh *ListHandler) DeleteList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+
+	//Отправка сообщения вебсокета
+	boardID, _ := strconv.ParseInt(r.PathValue("boardId"), 10, 64)
+    lh.broadcastListEvent("LIST_DELETED", map[string]interface{}{
+        "id":      listID,
+        "boardId": boardID,
+    })
 
 	// Возвращаем успешный статус
 	w.WriteHeader(http.StatusNoContent)

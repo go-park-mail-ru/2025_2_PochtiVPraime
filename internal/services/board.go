@@ -35,7 +35,7 @@ func NewBoardService(boardRepository repository.BoardsRepository, listRepository
 // TODO: Загружать доски из базы данных (ну или пока что просто из списка)
 func (bs *BoardService) GetBoards(ctx context.Context, userId int64) (*models.BoardsData, error) {
 	var userBoards = models.BoardsData{}
-	var rawUserBoards, err = bs.BoardRepository.GetBoardsByOwner(ctx, userId)
+	var rawUserBoards, err = bs.BoardRepository.GetUserBoards(ctx, userId)
 	if err != nil {
 		return nil, err
 	}

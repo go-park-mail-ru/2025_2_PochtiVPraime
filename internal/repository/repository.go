@@ -27,6 +27,7 @@ type BoardMemberRepository interface {
 type BoardsRepository interface {
 	CreateBoard(ctx context.Context, board *models.Board) (*models.Board, error)
 	GetBoardById(ctx context.Context, id int64) (*models.Board, error)
+	GetUserBoards(ctx context.Context, userID int64) ([]*models.Board, error)
 	GetBoardsByOwner(ctx context.Context, ownerID int64) ([]*models.Board, error)
 	UpdateBoard(ctx context.Context, board *models.Board) (*models.Board, error)
 	ArchiveBoard(ctx context.Context, id int64) error
