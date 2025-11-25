@@ -110,10 +110,10 @@ func (cs *CardService) GetListCards(ctx context.Context, listID int64) ([]*model
 }
 
 // UpdateCard обновляет карточку
-func (cs *CardService) UpdateCard(ctx context.Context, card *models.Card, cardId int64) (*models.Card, error) {
+func (cs *CardService) UpdateCard(ctx context.Context, card *models.Card, cardId int64) error {
 	existingCard, err := cs.CardRepository.GetCard(ctx, cardId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get card for update: %w", err)
+		return fmt.Errorf("failed to get card for update: %w", err)
 	}
 	if card.Content != "" {
 		existingCard.Content = card.Content
@@ -128,12 +128,12 @@ func (cs *CardService) UpdateCard(ctx context.Context, card *models.Card, cardId
 	existingCard.UpdatedAt = time.Now()
 
 	// Сохраняем изменения
-	updatedCard, err := cs.CardRepository.UpdateCard(ctx, existingCard)
+	err = cs.CardRepository.UpdateCard(ctx, existingCard)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update card: %w", err)
+		return fmt.Errorf("failed to update card: %w", err)
 	}
 
-	return updatedCard, nil
+	return nil
 }
 
 // DeleteCard удаляет карточку

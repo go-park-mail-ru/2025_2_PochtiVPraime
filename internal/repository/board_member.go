@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
@@ -39,24 +40,48 @@ func (bmr *BoardMemberRepoImpl) CreateBoardMember(ctx context.Context, boardMemb
 	).Scan(&boardMember.ID, &boardMember.CreatedAt, &boardMember.UpdatedAt)
 
 	if err != nil {
-		/*
-			// Обработка ошибок уникальности
-			if pqErr, ok := err.(*pq.Error); ok {
-				switch pqErr.Code.Name() {
-				case "unique_violation":
-					if pqErr.Constraint == "user_email_key" {
-						return nil, errors.New("email already exists")
-					}
-					if pqErr.Constraint == "user_username_key" {
-						return nil, errors.New("username already exists")
-					}
-				}
-			}
-		*/
 		return nil, err
 	}
 
 	return boardMember, nil
+}
+
+func (bmr *BoardMemberRepoImpl) GetBoardMembersByBoardId(ctx context.Context, boardID int64) ([]*models.BoardMember, error) {
+	query := `
+		SELECT id, user_id, board_id, member_role, created_at, updated_at
+		FROM board_member
+		WHERE board_id = $1
+		ORDER BY created_at DESC
+	`
+
+	rows, err := bmr.DB.QueryContext(ctx, query, boardID)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить участников доски: %w", err)
+	}
+	defer rows.Close()
+
+	var boardMembers []*models.BoardMember
+	for rows.Next() {
+		var boardMember models.BoardMember
+		err := rows.Scan(
+			&boardMember.ID,
+			&boardMember.UserId,
+			&boardMember.BoardId,
+			&boardMember.MemberRole,
+			&boardMember.CreatedAt,
+			&boardMember.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("не удалось считать участников доски: %w", err)
+		}
+		boardMembers = append(boardMembers, &boardMember)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("ошибка во время иттерации по участникам доски: %w", err)
+	}
+
+	return boardMembers, nil
 }
 
 // GetBoardMemberById возвращает участника доски по ID
@@ -89,15 +114,15 @@ func (bmr *BoardMemberRepoImpl) GetBoardMemberById(ctx context.Context, id int64
 }
 
 // GetBoardMemberByUserId возвращает участника доски по ID пользователя
-func (bmr *BoardMemberRepoImpl) GetBoardMemberByUserId(ctx context.Context, userId int64) (*models.BoardMember, error) {
+func (bmr *BoardMemberRepoImpl) GetBoardMemberByUserId(ctx context.Context, boardId, userId int64) (*models.BoardMember, error) {
 	query := `
 		SELECT id, user_id, board_id, member_role, created_at, updated_at
 		FROM board_member
-		WHERE user_id = $1
+		WHERE user_id = $1 AND board_id = $2
 	`
 
 	boardMember := &models.BoardMember{}
-	err := bmr.DB.QueryRowContext(ctx, query, userId).Scan(
+	err := bmr.DB.QueryRowContext(ctx, query, userId, boardId).Scan(
 		boardMember.ID,
 		boardMember.UserId,
 		boardMember.BoardId,
@@ -116,12 +141,51 @@ func (bmr *BoardMemberRepoImpl) GetBoardMemberByUserId(ctx context.Context, user
 	return boardMember, nil
 }
 
+// GetMembersOfUser возвращает участников, которым является пользователь
+func (bmr *BoardMemberRepoImpl) GetMembersOfUser(ctx context.Context, userId int64) ([]*models.BoardMember, error) {
+	query := `
+		SELECT id, user_id, board_id, member_role, created_at, updated_at
+		FROM board_member
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+	`
+
+	rows, err := bmr.DB.QueryContext(ctx, query, userId)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось получить участников: %w", err)
+	}
+	defer rows.Close()
+
+	var boardMembers []*models.BoardMember
+	for rows.Next() {
+		var boardMember models.BoardMember
+		err := rows.Scan(
+			&boardMember.ID,
+			&boardMember.UserId,
+			&boardMember.BoardId,
+			&boardMember.MemberRole,
+			&boardMember.CreatedAt,
+			&boardMember.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("не удалось считать участников пользователя: %w", err)
+		}
+		boardMembers = append(boardMembers, &boardMember)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("ошибка во время иттерации по участникам пользователя: %w", err)
+	}
+
+	return boardMembers, nil
+}
+
 // UpdateUser обновляет данные пользователя
-func (bmr *BoardMemberRepoImpl) ChangeRole(ctx context.Context, newRole string, memberId int64) error {
+func (bmr *BoardMemberRepoImpl) ChangeRole(ctx context.Context, newRole string, boardId, userId int64) error {
 	query := `
 		UPDATE board_member 
-		SET member_role = $1, update_at = $2
-		WHERE id = $3
+		SET member_role = $1, updated_at = $2
+		WHERE board_id = $3 AND user_id = $4
 		RETURNING updated_at
 	`
 
@@ -130,43 +194,25 @@ func (bmr *BoardMemberRepoImpl) ChangeRole(ctx context.Context, newRole string, 
 	err := bmr.DB.QueryRowContext(ctx, query,
 		newRole,
 		updatedAt,
-		memberId,
+		boardId,
+		userId,
 	).Scan(&updatedAt)
 
 	if err != nil {
-		/*
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, errors.New("user not found")
-			}
-
-			// Обработка ошибок уникальности
-			if pqErr, ok := err.(*pq.Error); ok {
-				switch pqErr.Code.Name() {
-				case "unique_violation":
-					if pqErr.Constraint == "users_email_key" {
-						return nil, errors.New("email already exists")
-					}
-					if pqErr.Constraint == "users_username_key" {
-						return nil, errors.New("username already exists")
-					}
-				}
-			}
-		*/
-
 		return err
 	}
 
 	return nil
 }
 
-// DeleteUser удаляет пользователя (soft delete)
-func (bmr *BoardMemberRepoImpl) DeleteBoardMember(ctx context.Context, id int64) error {
+// DeleteUser удаляет пользователя
+func (bmr *BoardMemberRepoImpl) DeleteBoardMember(ctx context.Context, boardId, userId int64) error {
 	query := `
 		DELETE FROM board_member 
-		WHERE id = $1
+		WHERE board_id = $1 AND user_id = $2
 	`
 
-	result, err := bmr.DB.ExecContext(ctx, query, id)
+	result, err := bmr.DB.ExecContext(ctx, query, boardId, userId)
 	if err != nil {
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {

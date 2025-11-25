@@ -178,19 +178,15 @@ func (ch *CardHandler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedCard, err := ch.CardService.UpdateCard(ctx, card, cardID)
-	_ = updatedCard
+	err = ch.CardService.UpdateCard(ctx, card, cardID)
 	if err != nil {
 		log.Printf("Error updating card: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	card.ID = cardID
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(card); err != nil {
-		log.Printf("Error encoding response: %v", err)
-	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // DeleteCard обрабатывает DELETE /board/{boardId}/list/{listId}/task/{taskId}

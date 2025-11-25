@@ -67,6 +67,7 @@ func (bh *BoardHandler) GetBoards(w http.ResponseWriter, r *http.Request) {
 	w.Write(json_Boards)
 
 }
+
 func (bh *BoardHandler) CreateBoards(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	decoder := json.NewDecoder(r.Body)

@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS board_member (
     "id" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL,
     board_id BIGINT NOT NULL,
-    member_role TEXT NOT NULL CHECK (member_role IN ('admin', 'member', 'observer')),
+    member_role TEXT NOT NULL CHECK (member_role IN ('owner','admin', 'member', 'observer')),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
@@ -106,7 +106,6 @@ CREATE TABLE IF NOT EXISTS attachment (
 CREATE TABLE IF NOT EXISTS checklist (
     "id" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     card_id BIGINT NOT NULL,
-    UNIQUE (card_id),
     title TEXT NOT NULL CHECK (char_length(title) BETWEEN 1 AND 100),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

@@ -15,7 +15,7 @@ import (
 func main() {
 
 	mux := http.NewServeMux()
-	connStr := "host=db-1 port=5432 user=user password=password dbname=TaskflowDB sslmode=disable"
+	connStr := "host=localhost port=54320 user=user password=password dbname=TaskflowDB sslmode=disable"
 	conn, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		panic(err)
@@ -33,18 +33,36 @@ func main() {
 	br := repository.NewBoardRepoImpl(conn)
 	lr := repository.NewListRepoImpl(conn)
 	cr := repository.NewCardRepoImpl(conn)
+	bmr := repository.NewBoardMemberRepoImpl(conn)
+	cmr := repository.NewCardMemberRepository(conn)
+	clr := repository.NewChecklistRepository(conn)
+	clpr := repository.NewChecklistPointRepository(conn)
+	comr := repository.NewCommentRepository(conn)
+	//sr := repository.NewSupportRepoImpl(conn)
 
 	//services
 	as := services.NewAuthService(ur)
 	bs := services.NewBoardService(br, lr, cr, ur)
 	ls := services.NewListService(lr, br, cr)
 	cs := services.NewCardService(cr, lr, br)
+	bms := services.NewBoardMemberService(bmr)
+	cms := services.NewCardMemberService(cmr)
+	cls := services.NewChecklistService(clr, clpr)
+	clps := services.NewChecklistPointService(clpr)
+	coms := services.NewCommentService(comr)
+	//ss := services.NewSupportService(sr)
 
 	//handlers
 	ah := handlers.NewAuthHandler(as)
 	bh := handlers.NewBoardHandler(bs, as)
 	lh := handlers.NewListHandler(ls, as)
 	ch := handlers.NewCardHandler(cs, as)
+	bmh := handlers.NewBoardMemberHandler(bms)
+	cmh := handlers.NewCardMemberHandler(cms, as)
+	clh := handlers.NewChecklistHandler(cls, as)
+	clph := handlers.NewChecklistPointHandler(clps, as)
+	comh := handlers.NewCommentHandler(coms, as)
+	//sh := handlers.NewSupportHandler(ss, as)
 
 	mux.HandleFunc("/api/auth/register", ah.Register)
 	mux.HandleFunc("/api/user/profile", ah.UserUpdate)
@@ -60,6 +78,20 @@ func main() {
 	mux.HandleFunc("/api/board/{boardId}/lists/{listId}", lh.List)
 	mux.HandleFunc("/api/board/{boardId}/list/{listId}/tasks", ch.CreateOrGetCards)
 	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}", ch.Card)
+	mux.HandleFunc("/api/boards/{boardId}/boardMembers", bmh.BoardMember)
+	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}/cardMembers", cmh.CardMember)
+	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}/checklists", clh.GetOrCreateChecklists)
+	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}/checklist/{checklistId}", clh.Checklist)
+	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}/checklist/{checklistId}/points", clph.GetOrCreateChecklistsPoints)
+	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}/checklist/{checklistId}/point/{pointId}", clph.ChecklistPoint)
+	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}/comments", comh.Comments)
+	mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}/comment/{commentId}", comh.Comments)
+
+	//mux.HandleFunc("/api/board/{boardId}/list/{listId}/task/{taskId}/checklist",)
+
+	//mux.HandleFunc("/api/forms", sh.CreateOrGetForms)
+	//mux.HandleFunc("/api/forms/{formId}", sh.DeleteOrGetForm)
+	//mux.HandleFunc("/api/forms/statistic", sh.GetAllSupportForms)
 
 	// Настройка CORS с помощью библиотеки
 	c := cors.New(cors.Options{

@@ -150,7 +150,7 @@ func (cr *CardRepoImpl) GetCardsByList(ctx context.Context, listID int64) ([]*mo
 	return cards, nil
 }
 
-func (cr *CardRepoImpl) UpdateCard(ctx context.Context, card *models.Card) (*models.Card, error) {
+func (cr *CardRepoImpl) UpdateCard(ctx context.Context, card *models.Card) error {
 	query := `
         UPDATE card 
         SET 
@@ -175,13 +175,13 @@ func (cr *CardRepoImpl) UpdateCard(ctx context.Context, card *models.Card) (*mod
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("карточка не найдена")
+			return errors.New("карточка не найдена")
 		}
-		return nil, fmt.Errorf("не удалось обновить карточку: %w", err)
+		return fmt.Errorf("не удалось обновить карточку: %w", err)
 	}
 
 	card.UpdatedAt = updatedAt
-	return card, nil
+	return nil
 }
 
 // Удаляет карточку
