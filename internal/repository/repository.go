@@ -1,0 +1,102 @@
+package repository
+
+import (
+	"context"
+
+	"github.com/go-park-mail-ru/2025_2_PochtiVPraime/internal/models"
+)
+
+//go:generate mockgen -source=repository.go -destination=mock/repository.go
+
+type UserRepository interface {
+	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
+	GetUserByID(ctx context.Context, id int64) (*models.User, error)
+	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
+	UpdateUser(ctx context.Context, user *models.User) (*models.User, error)
+	DeleteUser(ctx context.Context, id int64) error
+}
+
+type BoardMemberRepository interface {
+	CreateBoardMember(ctx context.Context, user *models.BoardMember) (*models.BoardMember, error)
+	GetBoardMemberById(ctx context.Context, id int64) (*models.BoardMember, error)
+	GetBoardMemberByUserId(ctx context.Context, boardId, userId int64) (*models.BoardMember, error)
+	GetMembersOfUser(ctx context.Context, userId int64) ([]*models.BoardMember, error)
+	GetBoardMembersByBoardId(ctx context.Context, boardID int64) ([]*models.BoardMember, error)
+	ChangeRole(ctx context.Context, newRole string, boardId, userId int64) error
+	DeleteBoardMember(ctx context.Context, boardId, userId int64) error
+}
+
+type CardMemberRepository interface {
+	CreateCardMember(ctx context.Context, cardMember *models.CardMember) error
+	GetCardMemberByID(ctx context.Context, id int64) (*models.CardMember, error)
+	GetCardMembersByCardID(ctx context.Context, cardID int64) ([]*models.CardMember, error)
+	GetCardMembersByBoardMemberID(ctx context.Context, boardMemberID int64) ([]*models.CardMember, error)
+	DeleteCardMember(ctx context.Context, cardID, boardMemberID int64) error
+	GetCardMember(ctx context.Context, cardID, boardMemberID int64) (*models.CardMember, error)
+	AddMemberToCard(ctx context.Context, cardID int64, boardMemberID int64) error
+	RemoveMemberFromCard(ctx context.Context, cardID int64, boardMemberID int64) error
+	DeleteAllCardMembersByCardID(ctx context.Context, cardID int64) error
+	DeleteAllCardMembersByBoardMemberID(ctx context.Context, boardMemberID int64) error
+}
+
+type BoardsRepository interface {
+	CreateBoard(ctx context.Context, board *models.Board) (*models.Board, error)
+	GetBoardById(ctx context.Context, id int64) (*models.Board, error)
+	GetBoardsByOwner(ctx context.Context, ownerID int64) ([]*models.Board, error)
+	UpdateBoard(ctx context.Context, board *models.Board) (*models.Board, error)
+	ArchiveBoard(ctx context.Context, id int64) error
+	RestoreBoard(ctx context.Context, id int64) error
+	DeleteBoard(ctx context.Context, id int64) error
+}
+
+type ListsRepository interface {
+	SaveList(ctx context.Context, list *models.List) (*models.List, error)
+	GetListByID(ctx context.Context, id int64) (*models.List, error)
+	GetListsByBoardID(ctx context.Context, id int64) ([]*models.List, error)
+	UpdateList(ctx context.Context, list *models.List) (*models.List, error)
+	DeleteList(ctx context.Context, id int64) error
+}
+
+type CardsRepository interface {
+	CreateCard(ctx context.Context, card *models.Card) (*models.Card, error)
+	GetCard(ctx context.Context, id int64) (*models.Card, error)
+	GetCardsByList(ctx context.Context, listID int64) ([]*models.Card, error)
+	UpdateCard(ctx context.Context, card *models.Card) error
+	DeleteCard(ctx context.Context, id int64) error
+	UpdateCardPosition(ctx context.Context, cardID int64, newPosition int, newListID int64) error
+	GetCardsByBoardMember(ctx context.Context, boardMemberID int64) ([]*models.Card, error)
+}
+
+type ChecklistPointRepository interface {
+	CreateChecklistPoint(ctx context.Context, point *models.ChecklistPoint) error
+	GetChecklistPointByID(ctx context.Context, id int64) (*models.ChecklistPoint, error)
+	GetChecklistPointsByChecklistID(ctx context.Context, checklistID int64) ([]*models.ChecklistPoint, error)
+	UpdateChecklistPoint(ctx context.Context, point *models.ChecklistPoint) error
+	DeleteChecklistPoint(ctx context.Context, id int64) error
+	UpdateCheckedStatus(ctx context.Context, id int64, checked bool) error
+	DeletePointsByChecklistId(ctx context.Context, checklistID int64) error
+	GetMaxPosition(ctx context.Context, checklistID int64) (int, error)
+}
+
+type ChecklistRepository interface {
+	CreateChecklist(ctx context.Context, checklist *models.Checklist) error
+	GetChecklistByID(ctx context.Context, id int64) (*models.Checklist, error)
+	GetChecklistsByCardID(ctx context.Context, cardID int64) ([]*models.Checklist, error)
+	UpdateChecklist(ctx context.Context, checklist *models.Checklist) error
+	DeleteChecklist(ctx context.Context, id int64) error
+	UpdateTitle(ctx context.Context, id int64, title string) error
+	Exists(ctx context.Context, id int64) (bool, error)
+}
+
+type CommentRepository interface {
+	CreateComment(ctx context.Context, comment *models.Comment) error
+	GetCommentByID(ctx context.Context, id int64) (*models.Comment, error)
+	GetCommentsByCardID(ctx context.Context, cardID int64) ([]*models.Comment, error)
+	GetCommentsByBoardMemberID(ctx context.Context, boardMemberID int64) ([]*models.Comment, error)
+	UpdateComment(ctx context.Context, comment *models.Comment) error
+	DeleteComment(ctx context.Context, id int64) error
+	UpdateCommentContent(ctx context.Context, id int64, content string) error
+	DeleteCommentsByCardID(ctx context.Context, cardID int64) error
+	DeleteCommentsByBoardMemberID(ctx context.Context, boardMemberID int64) error
+	GetCommentCountByCardID(ctx context.Context, cardID int64) (int, error)
+}

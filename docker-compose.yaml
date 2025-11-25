@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # Ваше приложение
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "8080:8080"  # Пример порта для приложения
+    depends_on:
+      - db-1
+    restart: unless-stopped
+
+  # База данных PostgreSQL
+  db-1:
+    image: postgres:18
+    ports:
+      - "54320:5432"  # Маппинг порта 54320 хоста на 5432 контейнера
+    environment:
+      - POSTGRES_DB=TaskFlowDB
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
